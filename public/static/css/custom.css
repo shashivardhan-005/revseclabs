@@ -1,0 +1,343 @@
+:root {
+    /* Primary Gradient Colors (Light Theme) */
+    --gradient-start: #34815b;
+    /* Slate-100 */
+    --gradient-mid: #4f9b7e;
+    /* Slate-200 */
+    --gradient-end: #314443;
+    /* Slate-300 */
+
+    /* Accent Colors */
+    --accent-cyan: #0ea5e9;
+    /* Sky-500 (Darker for light bg) */
+    --accent-green: #10b981;
+    /* Emerald-500 */
+    --accent-purple: #8b5cf6;
+    /* Violet-500 */
+    --accent-blue: #3b82f6;
+    /* Blue-500 */
+    --accent-gold: #f59e0b;
+    /* Amber-500 */
+
+    /* Surface Colors */
+    --surface-glass: rgba(255, 255, 255, 0.7);
+    --surface-card: rgba(255, 255, 255, 0.95);
+    --surface-hover: rgba(248, 250, 252, 1);
+    --border-glass: rgba(255, 255, 255, 0.8);
+
+    /* Text Colors */
+    --text-dark: #0f172a;
+    /* Slate-900 */
+    --text-muted: #64748b;
+    /* Slate-500 */
+    --text-light: #f8fafc;
+    --text-white-muted: rgba(0, 0, 0, 0.5);
+    /* Changed for light theme */
+
+    /* Effects */
+    --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.15);
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+
+    --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === BODY & BACKGROUND === */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--text-dark);
+    /* Reverted to dark for light theme */
+    line-height: 1.6;
+}
+
+/* Global utility overrides for dark/light context */
+.text-muted {
+    color: var(--text-white-muted) !important;
+}
+
+.card .text-muted,
+.navbar .text-muted,
+.bg-white .text-muted,
+.bg-light .text-muted,
+.alert .text-muted {
+    color: var(--text-muted) !important;
+}
+
+.navbar .nav-link {
+    color: var(--text-dark) !important;
+    font-weight: 600;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: var(--accent-blue) !important;
+}
+
+/* Ensure headings inside cards are dark, but outside are inherit (white) */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: inherit;
+}
+
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6 {
+    color: var(--text-dark);
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(167, 139, 250, 0.15) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* === NAVIGATION === */
+.navbar {
+    background: var(--surface-glass) !important;
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-bottom: 1px solid var(--border-glass);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+    padding: 12px 0;
+    transition: var(--transition-standard);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === CARDS === */
+.card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-standard);
+    overflow: hidden;
+    color: var(--text-dark);
+    /* Reset to dark text inside cards */
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 24px;
+}
+
+.card-title {
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--text-dark);
+}
+
+/* === BUTTONS === */
+.btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: var(--transition-standard);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+    border: none;
+    box-shadow: 0 10px 20px -5px rgba(34, 211, 238, 0.4);
+}
+
+.btn-primary:hover {
+    transform: scale(1.02);
+    box-shadow: 0 15px 25px -5px rgba(34, 211, 238, 0.5);
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+}
+
+/* === ALERTS & BADGES === */
+.alert {
+    border: none;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.badge {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+}
+
+/* === DATA TABLES === */
+.table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table tr {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    transition: var(--transition-standard);
+}
+
+.table tr:hover {
+    transform: translateX(4px);
+    background: var(--surface-hover);
+}
+
+.table td,
+.table th {
+    padding: 20px;
+    border: none;
+}
+
+.table td:first-child {
+    border-radius: 12px 0 0 12px;
+}
+
+.table td:last-child {
+    border-radius: 0 12px 12px 0;
+}
+
+/* === INSTRUCTION BLOCKS === */
+.instruction-card {
+    background: white;
+    border-left: 5px solid var(--accent-cyan);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.instruction-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    background: var(--accent-cyan);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+main>* {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* === QUIZ SPECIFIC === */
+.question-card {
+    border-left: 6px solid var(--accent-blue);
+    margin-bottom: 24px;
+}
+
+.option-btn {
+    width: 100%;
+    text-align: left;
+    padding: 16px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: var(--transition-standard);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.option-btn:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(34, 211, 238, 0.05);
+}
+
+.option-btn.active {
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.1);
+    font-weight: 600;
+}
+
+.explanation-box {
+    background: #f0fdf4;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #bbf7d0;
+    margin-top: 16px;
+}
+
+/* === MOBILE RESPONSIVENESS === */
+@media (max-width: 768px) {
+    main.container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .card-header,
+    .card-body {
+        padding: 15px 20px;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Make buttons full width on very small screens if needed */
+    .btn-block-mobile {
+        display: block;
+        width: 100%;
+    }
+}
