@@ -36,6 +36,7 @@ class UserModel extends Model
     // Validation
     protected $validationRules      = [
         'email' => 'required|valid_email|is_unique[users.email,id,{id}]',
+        'id'    => 'permit_empty|integer',
     ];
     protected $validationMessages   = [];
     protected $skipValidation       = false;

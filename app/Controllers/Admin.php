@@ -290,36 +290,61 @@ class Admin extends BaseController
     {
         $userModel = new UserModel();
         $emailLib = new EmailLibrary();
-        $data = $this->request->getPost();
+        $postData = $this->request->getPost();
         
-        $id = $data['id'] ?? null;
-        unset($data['id']);
+        $id = $postData['id'] ?? null;
+        
+        // Prepare explicit data array
+        $data = [
+            'first_name' => $postData['first_name'] ?? '',
+            'last_name'  => $postData['last_name'] ?? '',
+            'department' => $postData['department'] ?? '',
+            'is_staff'   => isset($postData['is_staff']) ? 1 : 0,
+        ];
+
+        // Prevent self-demotion
+        if ($id && $id == session()->get('user_id')) {
+            $data['is_staff'] = 1;
+        }
+
+        // Handle Password
+        $password = $postData['password'] ?? '';
+        if (!empty($password)) {
+            $data['password'] = $password;
+        }
 
         if ($id) {
             // Update
-            if (empty($data['password'])) {
-                unset($data['password']);
+            $data['id'] = $id;
+            // Always include email in data for the is_unique validation rule
+            $data['email'] = $postData['email'] ?? '';
+
+            if ($userModel->update($id, $data)) {
+                return redirect()->to('/admin/users')->with('success', 'User updated successfully.');
             } else {
-                $data['password'] = $data['password'];
+                $err = implode('<br>', $userModel->errors());
+                return redirect()->back()->with('error', 'Update semi-failed or validation error: ' . $err)->withInput();
             }
-            $userModel->update($id, $data);
-            $message = 'User updated successfully.';
         } else {
             // Create
-            $password = $data['password'] ?: bin2hex(random_bytes(4));
-            $data['password'] = $password;
-            $data['is_staff'] = isset($data['is_staff']);
-            $data['is_active'] = true;
+            $data['email'] = $postData['email'] ?? '';
+            $data['is_active'] = 1;
+
+            if (empty($password)) {
+                $password = bin2hex(random_bytes(4));
+                $data['password'] = $password;
+            }
             
             $userId = $userModel->insert($data);
-            $user = $userModel->find($userId);
-            
-            // Send Welcome Email
-            $emailLib->sendWelcome($user, $password);
-            $message = 'User created successfully and welcome email sent.';
+            if ($userId) {
+                $user = $userModel->find($userId);
+                $emailLib->sendWelcome($user, $password);
+                return redirect()->to('/admin/users')->with('success', 'User created successfully.');
+            } else {
+                $err = implode('<br>', $userModel->errors());
+                return redirect()->back()->with('error', 'Creation failed: ' . $err)->withInput();
+            }
         }
-
-        return redirect()->to('/admin/users')->with('success', $message);
     }
 
     public function importUsers()

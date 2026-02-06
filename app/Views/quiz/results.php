@@ -12,8 +12,9 @@
                     <div class="col-md-4 bg-primary text-white d-flex flex-column justify-content-center align-items-center p-5 text-center">
                         <h6 class="text-white-50 text-uppercase small fw-bold mb-2">Final Score</h6>
                         <div class="display-3 fw-bold mb-2"><?= round((float)$assignment['score'], 1) ?>%</div>
-                        <span class="badge <?= $assignment['score'] >= 70 ? 'bg-success' : 'bg-danger' ?> px-4 py-2 rounded-pill shadow-sm">
-                            <?= $assignment['score'] >= 70 ? 'CERTIFIED' : 'NOT CERTIFIED' ?>
+                        <?php $passScore = $quiz['pass_score'] ?: 70; ?>
+                        <span class="badge <?= $assignment['score'] >= $passScore ? 'bg-success' : 'bg-danger' ?> px-4 py-2 rounded-pill shadow-sm">
+                            <?= $assignment['score'] >= $passScore ? 'CERTIFIED' : 'NOT CERTIFIED' ?>
                         </span>
                     </div>
                     <div class="col-md-8 p-5 bg-white">
@@ -22,9 +23,16 @@
                                 <h2 class="fw-bold mb-1 text-dark"><?= esc($quiz['name']) ?></h2>
                                 <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-2"></i>Assessment finalized on <?= date('M d, Y H:i', strtotime($assignment['completed_at'])) ?></p>
                             </div>
-                            <button id="download-pdf" class="btn btn-primary btn-sm rounded-pill px-4 d-none d-lg-block" data-html2canvas-ignore="true">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Download PDF
-                            </button>
+                            <div class="d-flex gap-2">
+                                <?php if ($assignment['score'] >= $passScore): ?>
+                                    <a href="<?= base_url('quiz/certificate/'.$assignment['id']) ?>" class="btn btn-success btn-sm rounded-pill px-4 shadow-sm">
+                                        <i class="bi bi-award me-2"></i>Claim Certificate
+                                    </a>
+                                <?php endif; ?>
+                                <button id="download-pdf" class="btn btn-primary btn-sm rounded-pill px-4 d-none d-lg-block" data-html2canvas-ignore="true">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Download PDF
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="row g-3">

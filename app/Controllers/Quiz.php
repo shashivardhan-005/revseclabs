@@ -210,6 +210,18 @@ class Quiz extends BaseController
         $optionModel = new OptionModel();
 
         $assignment = $assignmentModel->find($assignmentId);
+        
+        if (! $assignment || $assignment['user_id'] != session()->get('id')) {
+            return redirect()->to('/dashboard');
+        }
+
+        // IMPORTANT: Prevent resubmission of already completed quizzes
+        // This avoids resetting the score to 0 if the user refreshes or clicks back
+        if ($assignment['status'] === 'COMPLETED') {
+            return redirect()->to('/quiz/success');
+        }
+
+        $attemptModel = new AttemptModel();
         $attempt = $attemptModel->where('assignment_id', $assignmentId)->first();
 
         $responses = $responseModel->where('attempt_id', $attempt['id'])->findAll();
@@ -243,7 +255,30 @@ class Quiz extends BaseController
             'score' => $finalScore
         ]);
 
-        $auditModel = new AuditModel();
+        // Certificate Logic
+        $quizModel = new \App\Models\QuizModel();
+        $quiz = $quizModel->find($assignment['quiz_id']);
+        
+        $passThreshold = (int)($quiz['pass_score'] ?: 70);
+        
+        // Use a small epsilon for float comparison safety, though round() is generally better for display scores
+        if (round((float)$finalScore, 2) >= $passThreshold) {
+            $userModel = new \App\Models\UserModel();
+            $user = $userModel->find(session()->get('id'));
+            
+            $emailLib = new \App\Libraries\EmailLibrary();
+            // Refresh assignment data to ensure we have the saved score and flags
+            $assignmentData = $assignmentModel->find($assignmentId);
+            
+            // Only send if not already sent for this assignment
+            if (!$assignmentData['certificate_sent']) {
+                if ($emailLib->sendCertificate($user, $quiz, $assignmentData)) {
+                    $assignmentModel->update($assignmentId, ['certificate_sent' => true]);
+                }
+            }
+        }
+
+        $auditModel = new \App\Models\AuditModel();
         $auditModel->insert([
             'user_id' => session()->get('id'),
             'action' => 'QUIZ_SUBMIT',
@@ -407,5 +442,39 @@ class Quiz extends BaseController
         $assignmentModel->update($assignmentId, ['retest_requested' => true]);
 
         return redirect()->back()->with('success', 'Retest request submitted successfully.');
+    }
+
+    public function certificate($assignmentId)
+    {
+        if (! session()->get('isLoggedIn')) return redirect()->to('/login');
+
+        $assignmentModel = new \App\Models\AssignmentModel();
+        $quizModel = new \App\Models\QuizModel();
+        $userModel = new \App\Models\UserModel();
+
+        $assignment = $assignmentModel->find($assignmentId);
+        if (! $assignment || $assignment['user_id'] != session()->get('id')) {
+            return redirect()->to('/dashboard');
+        }
+
+        if ($assignment['status'] !== 'COMPLETED') {
+            return redirect()->to('/dashboard')->with('error', 'Certification is only available for completed assessments.');
+        }
+
+        $quiz = $quizModel->find($assignment['quiz_id']);
+        $passThreshold = (int)($quiz['pass_score'] ?: 70);
+        
+        // Consistently use rounding for comparison to avoid floating point precision issues
+        if (round((float)$assignment['score'], 2) < $passThreshold) {
+            return redirect()->to('/dashboard')->with('error', 'You did not achieve the required passing score for this certificate.');
+        }
+
+        $user = $userModel->find(session()->get('id'));
+
+        return view('quiz/certificate', [
+            'assignment' => $assignment,
+            'quiz' => $quiz,
+            'user' => $user
+        ]);
     }
 }

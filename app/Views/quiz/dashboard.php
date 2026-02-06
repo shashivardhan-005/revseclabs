@@ -172,10 +172,19 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <?php if ($canView): ?>
-                                        <a href="<?= base_url('results/'.$cq['id']) ?>" class="btn btn-primary btn-sm px-3 rounded-pill">
-                                            View Report
-                                        </a>
+                                    <?php if ($canView): 
+                                        $passScore = $cq['pass_score'] ?: 70;
+                                    ?>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <?php if ($cq['score'] >= $passScore): ?>
+                                                <a href="<?= base_url('quiz/certificate/'.$cq['id']) ?>" class="btn btn-outline-success btn-sm px-3 rounded-pill" title="Download Certificate">
+                                                    <i class="bi bi-award"></i> Certificate
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="<?= base_url('results/'.$cq['id']) ?>" class="btn btn-primary btn-sm px-3 rounded-pill">
+                                                View Report
+                                            </a>
+                                        </div>
                                     <?php else: ?>
                                         <?php if ($cq['retest_requested']): ?>
                                             <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Retest Requested</span>

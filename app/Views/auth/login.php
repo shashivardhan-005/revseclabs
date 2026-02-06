@@ -7,8 +7,8 @@
     <!-- Login Form Panel -->
     <div class="col-lg-5 bg-white rounded-4 p-4 p-md-5 shadow-lg card border-0">
         <div class="text-center mb-5 d-lg-none">
-            <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="RevSecLabs" height="60" class="mb-2">
-            <h3 class="fw-bold mt-2">RevSecLabs</h3>
+            <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="VIYONA FINTECH" height="60" class="mb-2">
+            <h3 class="fw-bold mt-2">VIYONA FINTECH</h3>
         </div>
         
         <h3 class="fw-bold mb-2">Welcome Back</h3>

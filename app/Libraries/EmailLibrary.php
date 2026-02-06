@@ -58,7 +58,7 @@ class EmailLibrary
             return false;
         }
 
-        return $this->send($email, 'Welcome to RevSecLabs Quiz Platform', 'welcome', [
+        return $this->send($email, 'Welcome to VIYONA FINTECH Quiz Platform', 'welcome', [
             'first_name' => $this->getUserValue($user, 'first_name'),
             'email' => $email,
             'password' => $password
@@ -97,6 +97,19 @@ class EmailLibrary
             'first_name' => $this->getUserValue($user, 'first_name'),
             'is_approved' => $isApproved,
             'comment' => $request['admin_comment'] ?? ''
+        ]);
+    }
+
+    public function sendCertificate($user, $quiz, $assignment)
+    {
+        $email = $this->getUserValue($user, 'email');
+        if (empty($email)) return false;
+
+        return $this->send($email, 'Congratulations! Your Certificate for ' . $quiz['name'], 'certificate_email', [
+            'first_name' => $this->getUserValue($user, 'first_name'),
+            'quiz_name' => $quiz['name'],
+            'score' => round($assignment['score'], 1),
+            'certificate_url' => base_url('quiz/certificate/' . $assignment['id'])
         ]);
     }
 }
