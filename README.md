@@ -1,69 +1,92 @@
-# CodeIgniter 4 Application Starter
+# Cybersecurity Awareness Portal (RevSecLabs)
 
-## What is CodeIgniter?
+## Overview
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+The **Cybersecurity Awareness Portal** is a comprehensive, enterprise-grade web application developed by **RevSecLabs**. Its primary objective is to enhance organizational security posture by educating employees and stakeholders through interactive, scenario-based learning and rigorous assessment modules. 
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+In an era of increasing social engineering and phishing attacks, this platform serves as a critical line of defense, ensuring that every member of the organization is well-versed in identifying and mitigating potential cyber threats.
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+---
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+## Detailed Features
 
-## Installation & updates
+### 1. Advanced Quiz Engine
+- **Scenario-Based Learning**: Quizzes are not just multiple-choice; they are designed around real-world cybersecurity scenarios (e.g., Identifying a phishing email, secure password practices, physical security).
+- **Time-Bound Assessments**: Each quiz has a configurable duration, simulating high-pressure environments where quick, correct decision-making is vital.
+- **Dynamic Question Banking**: Support for various topics and difficulty levels, allowing admins to tailor assessments to different departments (e.g., more technical quizes for IT, general awareness for HR/Finance).
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+### 2. Proctored Anti-Cheat System
+To ensure the integrity of the results, the portal includes several proctoring features:
+- **Full-Screen Enforcement**: Quizzes can be configured to force full-screen mode, preventing users from accessing other browser tools.
+- **Tab-Switch Detection**: Real-time monitoring of browser focus. Switching tabs or windows triggers a violation.
+- **Auto-Submission**: If a user exceeds the allowed number of violations, their quiz is automatically submitted with a penalty.
+- **Copy-Paste Restriction**: Disables right-click and keyboard shortcuts for copying question text or pasting answers from external sources.
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+### 3. Comprehensive Analytics & Reporting
+- **Performance Dashboards**: Users can track their progress over time, seeing scores and areas for improvement.
+- **Admin Insights**: High-level views of organizational awareness trends, identifying specific departments or topics that require further training.
+- **Audit Logging**: Every critical action (login, quiz start, submission, violation) is logged for security and transparency.
 
-## Setup
+### 4. Automated Communication
+- **Personalized Results**: High-fidelity HTML emails are sent automatically upon quiz completion, providing detailed breakdowns of correct and incorrect answers.
+- **Welcome & Onboarding**: Automated enrollment emails for new users.
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+---
 
-## Important Change with index.php
+## Technical Architecture
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+The platform is built on a modern, secure stack:
+- **Django 5.0**: Leverages the "batteries-included" framework for robust security, ORM, and administrative features.
+- **MariaDB/MySQL**: Optimized for handling complex relational data and high-concurrency quiz attempts.
+- **Vanilla CSS3 & JS**: Custom-built, high-performance UI using modern design principles (Gradients, Glassmorphism, Responsive Grid).
+- **Production-Hardened**: Pre-configured with HSTS, SSL redirection, and secure cookie management for deployment at `https://revseclabs.in`.
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+---
 
-**Please** read the user guide for a better explanation of how CI4 works!
+## Getting Started
 
-## Repository Management
+### Installation Guide
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+1. **Clone & Setup**:
+   ```bash
+   git clone https://github.com/revseclabs/cybersecurity-portal.git
+   cd cybersecurity-portal
+   python -m venv venv
+   .\venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+2. **Database Initialization**:
+   The project includes a consolidated SQL script for quick setup:
+   - Create a database: `CREATE DATABASE cybersecurity_db;`
+   - Import the script: `mysql -u root -p cybersecurity_db < database_setup.sql`
+   - *This script sets up all tables and creates the initial admin user.*
 
-## Server Requirements
+3. **Environment Setup**:
+   Create a `.env` file in the root directory:
+   ```env
+   DEBUG=False
+   SECRET_KEY=your_secret_key_here
+   BASE_URL=https://revseclabs.in
+   DB_NAME=cybersecurity_db
+   DB_USER=root
+   DB_PASSWORD=your_password
+   EMAIL_HOST_USER=your_email@gmail.com
+   EMAIL_HOST_PASSWORD=your_app_password
+   ```
 
-PHP version 8.2 or higher is required, with the following extensions installed:
+## Production Notes
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+- **Domain**: This project is locked to `revseclabs.in` for production.
+- **Security**: The `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` are pre-configured in `settings.py`.
+- **Maintenance**: Use the `python manage.py check --deploy` command to verify the environment before going live.
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
+---
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+## Contact & Support
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+**RevSecLabs Team**  
+🌐 [www.revseclabs.in](https://revseclabs.in)  
+📧 [revseclabs@gmail.com](mailto:revseclabs@gmail.com)  
+
+*Proprietary software. All rights reserved by RevSecLabs.*
