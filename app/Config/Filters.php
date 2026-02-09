@@ -35,6 +35,8 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'adminNotification' => \App\Filters\AdminNotificationFilter::class,
+        'auth'              => \App\Filters\AuthFilter::class,
+        'admin'             => \App\Filters\AdminFilter::class,
     ];
 
     /**
@@ -108,5 +110,8 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = [
+        'auth'  => ['before' => ['dashboard*', 'profile*', 'results*', 'password*', 'quiz*']],
+        'admin' => ['before' => ['admin*']],
+    ];
 }

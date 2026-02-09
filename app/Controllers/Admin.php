@@ -22,11 +22,6 @@ class Admin extends BaseController
     {
         parent::initController($request, $response, $logger);
         
-        // Basic Staff Check
-        if (!session()->get('isLoggedIn') || !session()->get('is_staff')) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
-        }
-
         
         \Config\Services::renderer()->setData(['is_admin_layout' => true]);
 

@@ -11,7 +11,7 @@ class Auth extends BaseController
     public function login()
     {
         if (session()->get('isLoggedIn')) {
-            return redirect()->to('/dashboard');
+            return session()->get('is_staff') ? redirect()->to('/admin') : redirect()->to('/dashboard');
         }
 
         return view('auth/login');
