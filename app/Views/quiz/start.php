@@ -27,11 +27,28 @@
                         </div>
                         <div class="mb-3 d-flex justify-content-between">
                             <span class="text-muted small">Passing Score</span>
-                            <span class="fw-bold small text-success">70%</span>
+                            <span class="fw-bold small text-success"><?= $quiz['pass_score'] ?>%</span>
                         </div>
                         <div class="mb-0 d-flex justify-content-between">
                             <span class="text-muted small">Attempts</span>
                             <span class="fw-bold small">1 Allowed</span>
+                        </div>
+
+                        <!-- Availability Window -->
+                        <div class="mt-4 pt-3 border-top">
+                            <h6 class="fw-bold mb-3 text-muted small uppercase">Availability Window</h6>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="bg-success bg-opacity-10 text-success p-1 rounded">
+                                    <i class="bi bi-calendar-check small"></i>
+                                </div>
+                                <span class="small fw-bold text-dark">Starts: <?= date('M d, Y - H:i', strtotime($quiz['start_time'])) ?></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-danger bg-opacity-10 text-danger p-1 rounded">
+                                    <i class="bi bi-calendar-x small"></i>
+                                </div>
+                                <span class="small fw-bold text-dark">Ends: <?= date('M d, Y - H:i', strtotime($quiz['end_time'])) ?></span>
+                            </div>
                         </div>
                     </div>
                 </div>

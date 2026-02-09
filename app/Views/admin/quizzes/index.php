@@ -37,7 +37,7 @@
                 <tr>
                     <td class="fw-bold"><?= esc($quiz['name']) ?></td>
                     <td class="small">
-                        <?= date('M d', strtotime($quiz['start_time'])) ?> - <?= date('M d, Y', strtotime($quiz['end_time'])) ?>
+                        <?= date('M d, H:i', strtotime($quiz['start_time'])) ?> - <?= date('M d, H:i', strtotime($quiz['end_time'])) ?>
                     </td>
                     <td><?= esc($quiz['duration_minutes']) ?> min</td>
                     <td><?= esc($quiz['total_questions']) ?></td>

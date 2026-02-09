@@ -90,9 +90,18 @@
             </div>
         <?php else: ?>
             <div class="row g-4">
-                <?php foreach ($assigned_quizzes as $asm): ?>
-                <div class="col-md-6">
-                    <div class="card h-100 border-0 shadow-sm">
+                <?php foreach ($assigned_quizzes as $asm): 
+                    $now = time();
+                    $start = strtotime($asm['start_time']);
+                    $end = strtotime($asm['end_time']);
+                ?>
+                <div class="col-md-6 quiz-card-container" data-quiz-id="<?= $asm['id'] ?>">
+                    <div class="card h-100 border-0 shadow-sm" 
+                         data-start-time="<?= $start ?>" 
+                         data-end-time="<?= $end ?>"
+                         data-start-url="<?= base_url('quiz/'.$asm['id'].'/start') ?>"
+                         data-end-time-str="<?= date('M d, H:i', $end) ?>"
+                         data-status="<?= $asm['status'] ?>">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <span class="badge bg-primary bg-opacity-10 text-primary border-0"><?= esc($asm['topic_name'] ?: 'General') ?></span>
@@ -101,26 +110,32 @@
                             
                             <h5 class="fw-bold mb-3"><?= esc($asm['quiz_name']) ?></h5>
                             
-                            <div class="mb-4">
-                                <?php
-                                $now = time();
-                                $start = strtotime($asm['start_time']);
-                                $end = strtotime($asm['end_time']);
+                             <div class="timeline-container">
+                                <div class="timeline-line">
+                                    <div class="timeline-progress" style="width: <?= ($now >= $start && $now <= $end) ? (($now - $start) / ($end - $start)) * 100 : ($now > $end ? 100 : 0) ?>%"></div>
+                                    <div class="timeline-point active" style="left: 0;"></div>
+                                    <div class="timeline-point <?= $now >= $end ? 'active' : '' ?>" style="right: 0;"></div>
+                                </div>
+                                <div class="timeline-label timeline-label-start"><?= date('M d, H:i', $start) ?></div>
+                                <div class="timeline-label timeline-label-end"><?= date('M d, H:i', $end) ?></div>
+                                
+                                <div class="status-badge-floating <?= $now < $start ? 'bg-info' : ($now > $end ? 'bg-secondary' : 'bg-success') ?> text-white fw-bold">
+                                    <span id="status-text-<?= $asm['id'] ?>">
+                                        <?php if ($now < $start): ?>
+                                            Upcoming
+                                        <?php elseif ($now > $end): ?>
+                                            Closed
+                                        <?php else: ?>
+                                            Active
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                             </div>
 
-                                if ($now < $start): ?>
-                                    <div class="d-flex align-items-center text-info small fw-bold">
-                                        <i class="bi bi-calendar-event me-2"></i> Starts: <?= date('M d, H:i', $start) ?>
-                                    </div>
-                                <?php elseif ($now > $end): ?>
-                                    <div class="d-flex align-items-center text-muted small fw-bold">
-                                        <i class="bi bi-lock-fill me-2"></i> Closed: <?= date('M d, H:i', $end) ?>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="d-flex align-items-center text-success small fw-bold">
-                                        <i class="bi bi-unlock-fill me-2"></i> Ends: <?= date('M d, H:i', $end) ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                             <div class="mb-4 timer-display-container">
+                                 <!-- Timer will be injected here by JS -->
+                                 <div class="d-flex align-items-center text-muted small fw-bold" style="min-height: 20px;"></div>
+                             </div>
 
                             <div class="d-grid">
                                 <?php if ($now < $start): ?>
@@ -213,4 +228,132 @@
         <?php endif; ?>
     </div>
 </div>
+<?= $this->endSection() ?>
+
+<?= $this->section('extra_js') ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentQuizzes = <?= json_encode($assigned_quizzes) ?>;
+    
+    // 1. Per-second Countdown for Upcoming Quizzes
+    function updateTimers() {
+        const now = Math.floor(Date.now() / 1000);
+        document.querySelectorAll('.card[data-start-time]').forEach(card => {
+            const start = parseInt(card.dataset.startTime);
+            const end = parseInt(card.dataset.endTime);
+            const status = card.dataset.status;
+            const timerDisplay = card.querySelector('.timer-display-container div');
+            const buttonContainer = card.querySelector('.d-grid');
+            const progressBar = card.querySelector('.timeline-progress');
+            const statusBadge = card.querySelector('.status-badge-floating');
+            const quizId = card.closest('.quiz-card-container').dataset.quizId;
+
+            // Update Progress Bar
+            if (progressBar) {
+                let progress = 0;
+                if (now >= start && now <= end) {
+                    progress = ((now - start) / (end - start)) * 100;
+                } else if (now > end) {
+                    progress = 100;
+                }
+                progressBar.style.width = `${progress}%`;
+            }
+
+            if (now >= start && now <= end && status === 'ASSIGNED') {
+                // ... Swap logic ...
+                const startUrl = card.dataset.startUrl;
+                if (buttonContainer && !buttonContainer.querySelector('a')) {
+                    buttonContainer.innerHTML = `<a href="${startUrl}" class="btn btn-primary shadow-sm rounded-3">Enter Assessment</a>`;
+                    card.dataset.status = 'STARTED_LOCALLY';
+                    if (statusBadge) {
+                        statusBadge.className = 'status-badge-floating bg-success text-white fw-bold';
+                        const stText = document.getElementById(`status-text-${quizId}`);
+                        if (stText) stText.innerText = 'Active';
+                    }
+                }
+                
+                if (timerDisplay) {
+                    const diff = end - now;
+                    const mins = Math.floor(diff / 60);
+                    const secs = diff % 60;
+                    timerDisplay.innerHTML = `<i class="bi bi-unlock-fill me-2"></i> Active: Ends in ${mins}:${secs.toString().padStart(2, '0')}`;
+                    timerDisplay.className = "d-flex align-items-center text-success small fw-bold";
+                }
+            } else if (now >= start && now <= end && (status === 'STARTED' || status === 'STARTED_LOCALLY')) {
+                const diff = end - now;
+                const mins = Math.floor(diff / 60);
+                const secs = diff % 60;
+                if (timerDisplay) {
+                    timerDisplay.innerHTML = `<i class="bi bi-hourglass-split me-2"></i> Ends in: ${mins}:${secs.toString().padStart(2, '0')}`;
+                    timerDisplay.className = "d-flex align-items-center text-success small fw-bold";
+                }
+                if (statusBadge && !statusBadge.classList.contains('bg-success')) {
+                    statusBadge.className = 'status-badge-floating bg-success text-white fw-bold';
+                    const stText = document.getElementById(`status-text-${quizId}`);
+                    if (stText) stText.innerText = 'Active';
+                }
+            } else if (now > end) {
+                const container = card.closest('.quiz-card-container');
+                if (container && container.style.opacity !== '0.5') {
+                    container.style.opacity = '0.5';
+                    container.style.pointerEvents = 'none';
+                    if (timerDisplay) {
+                        timerDisplay.innerHTML = `<i class="bi bi-x-circle me-2"></i> Expired`;
+                        timerDisplay.className = "d-flex align-items-center text-danger small fw-bold";
+                    }
+                    if (buttonContainer) {
+                        buttonContainer.innerHTML = `<button class="btn btn-secondary disabled rounded-3">Expired</button>`;
+                    }
+                    if (statusBadge) {
+                        statusBadge.className = 'status-badge-floating bg-secondary text-white fw-bold';
+                        const stText = document.getElementById(`status-text-${quizId}`);
+                        if (stText) stText.innerText = 'Closed';
+                    }
+                }
+            } else if (now < start) {
+                const diff = start - now;
+                if (diff < 3600) {
+                    const mins = Math.floor(diff / 60);
+                    const secs = diff % 60;
+                    if (timerDisplay) {
+                        timerDisplay.innerHTML = `<i class="bi bi-clock-history me-2"></i> Starts in: ${mins}:${secs.toString().padStart(2, '0')}`;
+                        timerDisplay.className = "d-flex align-items-center text-warning small fw-bold";
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Poll for new assignments every 15 seconds
+    function pollAssignments() {
+        fetch('<?= base_url('quiz/get-updates') ?>')
+            .then(res => res.json())
+            .then(data => {
+                // If the count has changed, we definitely need to reload
+                if (data.length !== currentQuizzes.length) {
+                    location.reload();
+                    return;
+                }
+                
+                // If any quiz ID shifted or status changed, reload
+                let changed = false;
+                data.forEach((newItem, idx) => {
+                    const oldItem = currentQuizzes.find(q => q.id == newItem.id);
+                    if (!oldItem || newItem.status !== oldItem.status) {
+                        changed = true;
+                    }
+                });
+                
+                if (changed) {
+                    location.reload();
+                }
+            })
+            .catch(err => console.error('Poll failed:', err));
+    }
+
+    setInterval(updateTimers, 1000);
+    setInterval(pollAssignments, 15000); // 15s polling for instant feel
+    updateTimers();
+});
+</script>
 <?= $this->endSection() ?>

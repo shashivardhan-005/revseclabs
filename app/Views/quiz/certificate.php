@@ -3,256 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate of Completion - <?= esc($quiz['name']) ?></title>
+    <title>Certificate of Achievement - <?= esc($quiz['name']) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="icon" type="image/png" href="<?= base_url('static/images/revseclabs-logo.png') ?>">
     <style>
         :root {
             --cert-gold: #c5a059;
-            --cert-blue: #0f172a;
-            --cert-border: #e2e8f0;
+            --cert-gold-bright: #d4af37;
+            --cert-dark: #1a1a1a;
+            --cert-navy: #0a192f;
+            --cert-bg: #faf9f6; /* Parchment-style background */
         }
         body {
-            background: #f8fafc;
+            background: #e2e8f0;
             margin: 0;
-            padding: 50px 0;
+            padding: 80px 0;
             font-family: 'Montserrat', sans-serif;
+            color: var(--cert-dark);
         }
-        /* Container for the PDF generation */
-        #certificate-to-print {
-            width: 1122px; /* A4 Landscape width at 96dpi */
-            height: 793px;  /* A4 Landscape height at 96dpi */
-            margin: auto;
-            background: white;
-            padding: 0;
-            overflow: hidden;
+        
+        #certificate-wrapper {
+            width: 100%;
             display: flex;
-            align-items: center;
             justify-content: center;
         }
-        .certificate-container {
-            width: 100%;
-            height: 100%;
-            background: white;
-            padding: 40px;
-            border: 20px solid var(--cert-blue);
+
+        #certificate-to-print {
+            width: 1122px; /* Fixed A4 Landscape (Approx 297mm @ 96dpi) */
+            height: 793px;  /* Fixed A4 Landscape (Approx 210mm @ 96dpi) */
+            background: var(--cert-bg);
+            padding: 0;
             position: relative;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.25);
+            overflow: hidden;
+            box-sizing: border-box;
+            border: 2px solid #ddd;
+        }
+
+        /* Luxury Frame */
+        .cert-frame-outer {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            bottom: 30px;
+            left: 30px;
+            border: 12px double var(--cert-navy);
+            box-sizing: border-box;
+            z-index: 5;
+        }
+
+        .cert-frame-inner {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            bottom: 20px;
+            left: 20px;
+            border: 2px solid var(--cert-gold);
             box-sizing: border-box;
         }
-        .certificate-inner {
-            border: 2px solid var(--cert-gold);
-            padding: 30px;
+
+        /* Ornamental Corners */
+        .corner {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            z-index: 10;
+        }
+        .corner-tl { top: 0; left: 0; border-top: 5px solid var(--cert-gold); border-left: 5px solid var(--cert-gold); }
+        .corner-tr { top: 0; right: 0; border-top: 5px solid var(--cert-gold); border-right: 5px solid var(--cert-gold); }
+        .corner-bl { bottom: 0; left: 0; border-bottom: 5px solid var(--cert-gold); border-left: 5px solid var(--cert-gold); }
+        .corner-br { bottom: 0; right: 0; border-bottom: 5px solid var(--cert-gold); border-right: 5px solid var(--cert-gold); }
+
+        /* Subtle Watermark */
+        .cert-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.04;
+            width: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .cert-watermark img {
+            width: 450px;
+        }
+
+        .cert-content {
+            position: relative;
+            z-index: 10;
             height: 100%;
-            text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-sizing: border-box;
+            align-items: center;
+            padding: 60px 100px;
+            text-align: center;
         }
-        .cert-header {
-            margin-bottom: 25px;
-        }
-        .cert-logo {
+
+        .cert-header { margin-top: 20px; }
+        .cert-company {
             font-weight: 800;
             font-size: 1.4rem;
-            color: var(--cert-blue);
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-        }
-        .cert-title {
-            font-family: 'Libre Baskerville', serif;
-            font-size: 3.5rem;
-            color: var(--cert-blue);
-            margin: 10px 0;
+            color: var(--cert-navy);
+            letter-spacing: 12px;
             text-transform: uppercase;
-            line-height: 1;
-        }
-        .cert-presentation {
-            font-size: 1.1rem;
-            color: #64748b;
             margin-bottom: 20px;
         }
+
+        .cert-main-title {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 3.8rem;
+            color: var(--cert-navy);
+            margin-bottom: 0px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .cert-subtitle {
+            font-size: 1.2rem;
+            color: var(--cert-gold);
+            letter-spacing: 5px;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin: 5px 0 30px;
+        }
+
+        .cert-presentation {
+            font-size: 1.2rem;
+            color: #64748b;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
         .recipient-name {
             font-family: 'Libre Baskerville', serif;
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: 700;
+            color: var(--cert-navy);
+            margin: 5px 0;
+            padding: 0 40px;
+        }
+
+        /* Stylish Name Separator */
+        .name-separator {
+            width: 600px;
+            border-bottom: 3px solid var(--cert-navy);
+            margin: 5px auto 30px;
+            position: relative;
+        }
+        .name-separator::after {
+            content: '♦';
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            transform: translate(-50%, -50%);
+            background: var(--cert-bg);
+            padding: 0 15px;
             color: var(--cert-gold);
-            border-bottom: 2px solid #f1f5f9;
-            display: inline-block;
-            margin: 15px 0;
-            padding: 0 40px 10px;
+            font-size: 1.2rem;
         }
-        .cert-description {
-            font-size: 1.1rem;
-            color: #475569;
-            max-width: 650px;
-            margin: 20px auto;
+
+        .cert-achievement-text {
+            font-size: 1.15rem;
             line-height: 1.6;
+            color: #4b5563;
+            max-width: 800px;
+            margin-bottom: 30px;
         }
+
+        .quiz-name {
+            color: var(--cert-navy);
+            font-weight: 700;
+            font-size: 1.4rem;
+            display: inline-block;
+            padding: 0 10px;
+            border-bottom: 2px dotted var(--cert-gold);
+        }
+
         .cert-meta {
-            margin-top: 40px;
+            width: 100%;
             display: flex;
             justify-content: space-around;
             align-items: flex-end;
-        }
-        .signature-block {
-            text-align: center;
-            width: 220px;
-        }
-        .signature-line {
-            border-top: 1px solid var(--cert-blue);
             margin-top: 10px;
-            padding-top: 5px;
-            font-size: 0.9rem;
+        }
+
+        .meta-item { text-align: center; width: 320px; }
+        .meta-signature {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            color: var(--cert-navy);
+            margin-bottom: -5px;
+        }
+        .meta-val {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: var(--cert-navy);
+            margin-bottom: 5px;
+        }
+        .meta-label {
+            border-top: 1.5px solid #cbd5e1;
+            padding-top: 8px;
+            font-size: 0.85rem;
             color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
         }
-        .cert-footer {
-            margin-top: 50px;
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-        .seal {
-            width: 130px;
-            height: 130px;
-            background: var(--cert-gold);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 800;
+
+        .cert-footer-id {
             position: absolute;
-            bottom: 60px;
-            right: 60px;
-            opacity: 0.95;
-            transform: rotate(-15deg);
-            box-shadow: 0 10px 20px rgba(197, 160, 89, 0.3);
-            border: 4px double white;
+            bottom: 45px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            letter-spacing: 1.5px;
+            z-index: 10;
         }
+
+        /* Utility Buttons */
+        #download-cert-btn {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+        }
+
         @media print {
             body { background: white; padding: 0; }
-            #certificate-to-print { width: 100%; height: auto; box-shadow: none; border: none; }
+            #certificate-to-print { 
+                box-shadow: none; 
+                margin: 0;
+            }
             .no-print { display: none; }
-        }
-        /* UI overrides for the preview */
-        #certificate-to-print {
-            box-shadow: 0 40px 100px rgba(0,0,0,0.1);
-            transform: scale(0.8);
-            transform-origin: top center;
-        }
-        @media (max-width: 1200px) {
-            #certificate-to-print { transform: scale(0.6); }
-        }
-        @media (max-width: 800px) {
-            #certificate-to-print { transform: scale(0.4); }
         }
     </style>
 </head>
 <body>
-    <div class="container text-center mb-0 no-print" style="position: relative; z-index: 100;">
-        <button id="download-cert" class="btn btn-primary px-4 py-2 shadow-sm rounded-pill">
-            <i class="bi bi-file-earmark-pdf me-2"></i> Download Professional PDF
+
+    <div class="no-print" id="download-cert-btn">
+        <button id="download-cert" class="btn btn-navy shadow-lg rounded-pill px-5 border-0 text-white" style="background: var(--cert-navy)">
+            <i class="bi bi-file-earmark-pdf-fill me-2"></i> DOWNLOAD HIGH-RESOLUTION CERTIFICATE
         </button>
-        <a href="<?= base_url('dashboard') ?>" class="btn btn-outline-secondary px-4 py-2 ms-2 rounded-pill">Back to Dashboard</a>
+        <a href="<?= base_url('dashboard') ?>" class="btn btn-outline-secondary px-4 rounded-pill shadow-lg bg-white border-0">Back</a>
     </div>
 
-    <div id="certificate-wrapper" style="width: 100%; overflow: hidden;">
+    <div id="certificate-wrapper">
         <div id="certificate-to-print">
-            <div class="certificate-container">
-                <div class="certificate-inner">
-                    <div class="cert-header">
-                        <div class="cert-logo">VIYONA FINTECH</div>
-                        <div class="cert-title">Certificate</div>
-                        <div class="cert-presentation">of Completion</div>
-                    </div>
+            <!-- Frame and Borders -->
+            <div class="cert-frame-outer">
+                <div class="cert-frame-inner">
+                    <div class="corner corner-tl"></div>
+                    <div class="corner corner-tr"></div>
+                    <div class="corner corner-bl"></div>
+                    <div class="corner corner-br"></div>
+                </div>
+            </div>
 
-                    <div class="cert-body">
-                        <div class="cert-presentation">This is to certify that</div>
-                        <div class="recipient-name"><?= esc($user['first_name'] . ' ' . $user['last_name']) ?></div>
-                        <div class="cert-description">
-                            has successfully demonstrated professional competency in<br>
-                            <strong style="color: var(--cert-blue);"><?= esc($quiz['name']) ?></strong><br>
-                            by achieving a passing score of <strong><?= round($assignment['score'], 1) ?>%</strong>.
-                        </div>
-                    </div>
+            <!-- Subtle Logo Watermark -->
+            <div class="cert-watermark">
+                <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="Watermark">
+            </div>
 
-                    <div class="cert-meta">
-                        <div class="signature-block">
-                            <div style="font-family: 'Libre Baskerville', serif; font-size: 1.2rem; color: var(--cert-blue); font-style: italic;">Viyona Fintech</div>
-                            <div class="signature-line">Official Verification</div>
-                        </div>
-                        <div class="signature-block">
-                            <div style="font-family: 'Montserrat', sans-serif; font-weight: 600;"><?= date('F d, Y', strtotime($assignment['completed_at'])) ?></div>
-                            <div class="signature-line">Date of Issue</div>
-                        </div>
-                    </div>
+            <!-- Central Content -->
+            <div class="cert-content">
+                <div class="cert-header">
+                    <div class="cert-company">Viyona Fintech</div>
+                    <h1 class="cert-main-title">Certificate</h1>
+                    <div class="cert-subtitle">OF ACHIEVEMENT</div>
+                </div>
 
-                    <div class="cert-footer">
-                        Certificate ID: <?= strtoupper(substr(md5($assignment['id']), 0, 12)) ?> • Issued by Viyona Fintech Cybersecurity Division
+                <p class="cert-presentation">This is to officially certify that</p>
+                
+                <h2 class="recipient-name">
+                    <?= esc($user['first_name'] . ' ' . $user['last_name']) ?>
+                </h2>
+
+                <div class="name-separator"></div>
+
+                <p class="cert-achievement-text">
+                    has successfully completed the professional assessment in<br>
+                    <span class="quiz-name"><?= esc($quiz['name']) ?></span><br>
+                    demonstrating an excellent proficiency with a grade of <strong><?= round($assignment['score'], 1) ?>%</strong>
+                </p>
+
+                <div class="cert-meta">
+                    <div class="meta-item">
+                        <div class="meta-signature">Viyona Fintech</div>
+                        <div class="meta-label">Authorized Signatory</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-val"><?= date('F d, Y', strtotime($assignment['completed_at'])) ?></div>
+                        <div class="meta-label">Date of Issuance</div>
                     </div>
                 </div>
-                <div class="seal">
-                    <div class="text-center">
-                        <div style="font-size: 0.7rem;">OFFICIAL</div>
-                        <div style="font-size: 1.2rem; line-height: 1;">VALID</div>
-                        <div style="font-size: 0.7rem;">ACADEMY</div>
-                    </div>
+
+                <div class="cert-footer-id">
+                    Verification ID: <?= strtoupper(substr(md5($assignment['id']), 0, 16)) ?> &nbsp;•&nbsp; Cybersecurity Assessment Division
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         document.getElementById('download-cert').addEventListener('click', function () {
             const btn = this;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Generating PDF Achievement...';
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Capturing High-Resolution Canvas...';
             btn.disabled = true;
 
             const element = document.getElementById('certificate-to-print');
-
             const opt = {
                 margin:       0,
-                filename:     'Certificate_<?= str_replace(' ', '_', esc($quiz['name'])) ?>.pdf',
+                filename:     '<?= esc($user['first_name']) ?>_<?= esc($user['last_name']) ?>_<?= str_replace(' ', '_', esc($quiz['name'])) ?>.pdf',
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { 
-                    scale: 3, 
-                    useCORS: true, 
-                    logging: false,
+                    scale: 4, 
+                    useCORS: true,
                     letterRendering: true,
-                    allowTaint: false,
-                    onclone: (clonedDoc) => {
-                        // Ensure the cloned version for capture is not scaled
-                        const clonedEl = clonedDoc.getElementById('certificate-to-print');
-                        clonedEl.style.transform = 'none';
-                        clonedEl.style.boxShadow = 'none';
-                        clonedEl.style.margin = '0';
-                        clonedEl.style.padding = '0';
-                        clonedEl.style.width = '1122px';
-                        clonedEl.style.height = '793px';
-                    }
+                    backgroundColor: '#faf9f6'
                 },
-                jsPDF:        { unit: 'px', format: [1122, 793], orientation: 'landscape' },
-                pagebreak:    { mode: 'avoid-all' }
+                jsPDF:        { unit: 'px', format: [1122, 793], orientation: 'landscape', compress: true }
             };
 
-            // Capture and save
             html2pdf().set(opt).from(element).save().then(() => {
-                btn.innerHTML = originalText;
+                btn.innerHTML = originalHTML;
                 btn.disabled = false;
             }).catch(err => {
-                console.error('PDF Generation Error:', err);
-                // Fallback to simpler method if high-res fails
-                html2pdf().from(element).set({
-                    margin: 0,
-                    filename: 'Certificate.pdf',
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-                }).save();
-                
-                btn.innerHTML = originalText;
+                console.error(err);
+                btn.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Error';
                 btn.disabled = false;
             });
         });

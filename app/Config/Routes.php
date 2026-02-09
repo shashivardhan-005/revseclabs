@@ -26,6 +26,7 @@ $routes->post('quiz/(:num)/log-violation', 'Quiz::logViolation/$1');
 $routes->get('quiz/success', 'Quiz::success');
 $routes->post('quiz/retest/(:num)', 'Quiz::requestRetest/$1');
 $routes->get('quiz/certificate/(:num)', 'Quiz::certificate/$1');
+$routes->get('quiz/get-updates', 'Quiz::get_updates');
 
 // Profile & Settings
 $routes->get('results/(:num)', 'Quiz::results/$1');

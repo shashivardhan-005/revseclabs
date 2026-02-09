@@ -966,10 +966,17 @@ class Admin extends BaseController
     public function getPendingCount()
     {
         $requestModel = new ProfileChangeRequestModel();
-        $pendingCount = $requestModel->where('is_approved', false)
-                                     ->where('is_rejected', false)
-                                     ->countAllResults();
-        
-        return $this->response->setJSON(['count' => $pendingCount]);
+    $profileCount = $requestModel->where('is_approved', false)
+                                 ->where('is_rejected', false)
+                                 ->countAllResults();
+
+    $assignmentModel = new \App\Models\AssignmentModel();
+    $retestCount = $assignmentModel->where('retest_requested', true)
+                                   ->countAllResults();
+    
+    return $this->response->setJSON([
+        'profile_count' => $profileCount,
+        'retest_count' => $retestCount
+    ]);
     }
 }

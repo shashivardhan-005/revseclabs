@@ -1,9 +1,16 @@
+<?php
+    // Capture the title section once so it can be reused
+    ob_start();
+    echo $this->renderSection('title');
+    $pageTitle = ob_get_clean();
+    $pageTitle = $pageTitle ?: 'Admin Control Panel';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $this->renderSection('title') ?> | <?= get_setting('site_name', 'RevSecLabs') ?></title>
+    <title><?php echo $pageTitle; ?> | <?= get_setting('site_name', 'RevSecLabs') ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= base_url('static/css/admin_custom.css') ?>">
@@ -22,14 +29,22 @@
             <li><a href="<?= base_url('admin') ?>" class="<?= (current_url() == base_url('admin')) ? 'active' : '' ?>"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
             <li><a href="<?= base_url('admin/users') ?>" class="<?= (current_url() == base_url('admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Users</span></a></li>
             <li><a href="<?= base_url('admin/quizzes') ?>" class="<?= (current_url() == base_url('admin/quizzes')) ? 'active' : '' ?>"><i class="bi bi-journal-text"></i><span>Quizzes</span></a></li>
-            <li><a href="<?= base_url('admin/assignments') ?>" class="<?= (current_url() == base_url('admin/assignments')) ? 'active' : '' ?>"><i class="bi bi-clipboard-check-fill"></i><span>Assignments</span></a></li>
+            <li>
+                <a href="<?= base_url('admin/assignments') ?>" class="<?= (current_url() == base_url('admin/assignments')) ? 'active' : '' ?>">
+                    <i class="bi bi-clipboard-check-fill"></i>
+                    <span>Assignments</span>
+                    <?php if (isset($retest_requests_count) && $retest_requests_count > 0): ?>
+                        <span id="retest-badge" class="badge rounded-pill bg-danger ms-auto"><?= $retest_requests_count ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
             <li><a href="<?= base_url('admin/questions') ?>" class="<?= (current_url() == base_url('admin/questions')) ? 'active' : '' ?>"><i class="bi bi-database-fill"></i><span>Question Bank</span></a></li>
             <li>
                 <a href="<?= base_url('admin/profile-requests') ?>" class="<?= (current_url() == base_url('admin/profile-requests')) ? 'active' : '' ?>">
                     <i class="bi bi-check-circle-fill"></i>
                     <span>Approvals</span>
-                    <?php if (isset($pending_requests_count) && $pending_requests_count > 0): ?>
-                        <span class="badge rounded-pill bg-danger ms-auto"><?= $pending_requests_count ?></span>
+                    <?php if (isset($profile_requests_count) && $profile_requests_count > 0): ?>
+                        <span id="profile-badge" class="badge rounded-pill bg-danger ms-auto"><?= $profile_requests_count ?></span>
                     <?php endif; ?>
                 </a>
             </li>
@@ -50,7 +65,7 @@
                         <i class="bi bi-list fs-3"></i>
                     </button>
                     <span class="header-quiz-name">
-                        Admin Control Panel
+                        <?php echo $pageTitle; ?>
                     </span>
                 </div>
                 <div class="header-actions d-flex align-items-center gap-3">
@@ -150,59 +165,81 @@
     </script>
     <script>
         // Real-time Notification Polling
-        let currentPendingCount = <?= $pending_requests_count ?? 0 ?>;
+        let currentProfileCount = <?= $profile_requests_count ?? 0 ?>;
+        let currentRetestCount = <?= $retest_requests_count ?? 0 ?>;
 
         function updateNotifications() {
             fetch('<?= base_url('admin/get-pending-count') ?>')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.count > currentPendingCount) {
-                        // Show Browser Notification if permission granted
+                    const totalNew = data.profile_count + data.retest_count;
+                    const totalOld = currentProfileCount + currentRetestCount;
+
+                    if (totalNew > totalOld) {
+                        // Show Browser Notification
                         if (Notification.permission === "granted") {
-                            new Notification("New Approval Request", {
-                                body: `There are now ${data.count} pending requests needing your attention.`,
+                            new Notification("New Admin Action Required", {
+                                body: `You have new requests: ${data.profile_count} Approvals, ${data.retest_count} Retests.`,
                                 icon: '<?= base_url('static/images/revseclabs-logo.png') ?>'
                             });
                         }
-                        // Play a subtle sound or just update UI
                     }
-                    
-                    if (data.count !== currentPendingCount) {
-                        currentPendingCount = data.count;
-                        refreshNotificationUI(data.count);
+
+                    if (data.profile_count !== currentProfileCount || data.retest_count !== currentRetestCount) {
+                        currentProfileCount = data.profile_count;
+                        currentRetestCount = data.retest_count;
+                        refreshNotificationUI(data.profile_count, data.retest_count);
                     }
                 })
                 .catch(err => console.error('Notification poll failed:', err));
         }
 
-        function refreshNotificationUI(count) {
-            // Update Sidebar Badge
-            const sidebarBadge = document.querySelector('.sidebar-nav .badge');
-            const approvalLink = document.querySelector('a[href*="profile-requests"]');
-            
+        function updateTabTitle(count) {
+            const baseTitle = "<?php echo $pageTitle; ?> | <?= get_setting('site_name', 'RevSecLabs') ?>";
             if (count > 0) {
-                if (sidebarBadge) {
-                    sidebarBadge.textContent = count;
-                } else if (approvalLink) {
-                    const badge = document.createElement('span');
-                    badge.className = 'badge rounded-pill bg-danger ms-auto';
-                    badge.textContent = count;
-                    approvalLink.appendChild(badge);
-                }
-                
-                // Update Bell Icon Badge in Header
-                const bellContainer = document.querySelector('.header-actions a[href*="profile-requests"]');
-                if (bellContainer) {
-                    // Update dot or count if it exists
-                } else {
-                    // Add bell icon if it was hidden
-                    location.reload(); // Simplest way to show the bell if it wasn't there
-                }
+                document.title = `(${count}) ${baseTitle}`;
             } else {
-                if (sidebarBadge) sidebarBadge.remove();
-                const bellIcon = document.querySelector('.header-actions a[href*="profile-requests"]');
-                if (bellIcon) bellIcon.remove();
+                document.title = baseTitle;
             }
+        }
+
+        function refreshNotificationUI(pCount, rCount) {
+            // 1. Update Profile Badge
+            const pBadge = document.getElementById('profile-badge');
+            const pLink = document.querySelector('a[href*="profile-requests"]');
+            if (pCount > 0) {
+                if (pBadge) {
+                    pBadge.textContent = pCount;
+                } else if (pLink) {
+                    const badge = document.createElement('span');
+                    badge.id = 'profile-badge';
+                    badge.className = 'badge rounded-pill bg-danger ms-auto';
+                    badge.textContent = pCount;
+                    pLink.appendChild(badge);
+                }
+            } else if (pBadge) {
+                pBadge.remove();
+            }
+
+            // 2. Update Retest Badge
+            const rBadge = document.getElementById('retest-badge');
+            const rLink = document.querySelector('a[href*="admin/assignments"]');
+            if (rCount > 0) {
+                if (rBadge) {
+                    rBadge.textContent = rCount;
+                } else if (rLink) {
+                    const badge = document.createElement('span');
+                    badge.id = 'retest-badge';
+                    badge.className = 'badge rounded-pill bg-danger ms-auto';
+                    badge.textContent = rCount;
+                    rLink.appendChild(badge);
+                }
+            } else if (rBadge) {
+                rBadge.remove();
+            }
+
+            // 3. Update Browser Tab Title
+            updateTabTitle(pCount + rCount);
         }
 
         // Request permission on first interaction

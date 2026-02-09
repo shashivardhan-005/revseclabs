@@ -482,4 +482,32 @@ class Quiz extends BaseController
             'user' => $user
         ]);
     }
+
+    public function get_updates()
+    {
+        if (! session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['error' => 'Unauthorized'])->setStatusCode(401);
+        }
+
+        $userId = session()->get('id');
+        $assignmentModel = new \App\Models\AssignmentModel();
+        $assignments = $assignmentModel->getAssignmentsByUser($userId);
+
+        $data = [];
+        foreach ($assignments as $asm) {
+            $data[] = [
+                'id' => $asm['id'],
+                'quiz_name' => $asm['quiz_name'],
+                'topic_name' => $asm['topic_name'] ?: 'General',
+                'duration_minutes' => $asm['duration_minutes'],
+                'start_time' => $asm['start_time'],
+                'end_time' => $asm['end_time'],
+                'status' => $asm['status'],
+                'start_timestamp' => strtotime($asm['start_time']),
+                'end_timestamp' => strtotime($asm['end_time'])
+            ];
+        }
+
+        return $this->response->setJSON($data);
+    }
 }

@@ -1,3 +1,7 @@
 /writable
 /writable
 /writable/logs
+writable/logs/log-2026-02-09.log
+*.log
+/writable
+*.log

@@ -29,11 +29,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Start Time</label>
-                                <input type="text" name="start_time" class="form-control flatpickr" value="<?= (isset($quiz['start_time']) && $quiz['start_time']) ? date($phpFormat, strtotime($quiz['start_time'])) : '' ?>" required>
+                                <input type="text" name="start_time" class="form-control flatpickr" value="<?= (isset($quiz['start_time']) && $quiz['start_time']) ? date('Y-m-d H:i:s', strtotime($quiz['start_time'])) : '' ?>" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">End Time</label>
-                                <input type="text" name="end_time" class="form-control flatpickr" value="<?= (isset($quiz['end_time']) && $quiz['end_time']) ? date($phpFormat, strtotime($quiz['end_time'])) : '' ?>" required>
+                                <input type="text" name="end_time" class="form-control flatpickr" value="<?= (isset($quiz['end_time']) && $quiz['end_time']) ? date('Y-m-d H:i:s', strtotime($quiz['end_time'])) : '' ?>" required>
                             </div>
                         </div>
                         <div class="row">
@@ -61,6 +61,10 @@
                                     <option value="<?= $topic['id'] ?>" <?= ($quiz && isset($quiz['topic_id']) && $quiz['topic_id'] == $topic['id']) ? 'selected' : '' ?>><?= $topic['name'] ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Passing Score (%)</label>
+                            <input type="number" name="pass_score" class="form-control" value="<?= $quiz ? esc($quiz['pass_score']) : get_setting('default_passing_score', 70) ?>" min="0" max="100" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Difficulty</label>
