@@ -80,6 +80,10 @@ $routes->group('admin', ['namespace' => 'App\Controllers'], static function ($ro
     $routes->post('profile-requests/approve/(:num)', 'Admin::approveProfileRequest/$1');
     $routes->post('profile-requests/reject/(:num)', 'Admin::rejectProfileRequest/$1');
 
+    // Settings
+    $routes->get('settings', 'Admin::settings');
+    $routes->post('settings/save', 'Admin::saveSettings');
+
     // Export
     $routes->get('quizzes/export/(:num)', 'Admin::exportResults/$1');
 });

@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS quizzes (
     end_time DATETIME NOT NULL,
     duration_minutes INT DEFAULT 15,
     total_questions INT DEFAULT 10,
+    pass_score INT DEFAULT 70,
     topic_id INT,
     difficulty ENUM('EASY', 'MEDIUM', 'HARD') DEFAULT 'MEDIUM',
     force_full_screen BOOLEAN DEFAULT TRUE,
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS quizzes (
 -- Default Admin User (Password: admin123)
 -- In production, please change this immediately.
 INSERT INTO users (email, password, first_name, last_name, is_staff, is_active, is_password_changed) 
-VALUES ('admin@revseclabs.in', '$2y$10$8K0M7qX5R5X5X5X5X5X5XuevS.HqT9z5/6JbJbJbJbJbJbJbJbJbJb', 'Admin', 'User', 1, 1, 1);
+VALUES ('admin@revseclabs.in', '$2y$10$CsBG6lCipRHj8ch269R0i.Tpw9GpQOO.13FIGj2wRxYXu9Oqn1NXm', 'Admin', 'User', 1, 1, 1);
 -- Note: The above hash is for 'admin123'. It's better to use the Seeder for real deployment.
 
 CREATE TABLE IF NOT EXISTS quiz_assignments (
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS quiz_assignments (
     completed_at DATETIME,
     score FLOAT,
     result_email_sent BOOLEAN DEFAULT FALSE,
+    certificate_sent BOOLEAN DEFAULT FALSE,
     retest_requested BOOLEAN DEFAULT FALSE,
     UNIQUE KEY user_quiz (user_id, quiz_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -122,3 +124,19 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     details TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT,
+    setting_group VARCHAR(50) DEFAULT 'general',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO settings (setting_key, setting_value, setting_group) VALUES 
+('site_name', 'RevSecLabs', 'branding'),
+('contact_email', 'revseclabs@gmail.com', 'branding'),
+('email_sender_name', 'RevSecLabs Admin', 'email'),
+('email_sender_email', 'revseclabs@gmail.com', 'email'),
+('default_passing_score', '70', 'quiz'),
+('default_violation_limit', '3', 'quiz'),
+('time_format', '24h', 'general');

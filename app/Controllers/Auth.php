@@ -38,6 +38,13 @@ class Auth extends BaseController
                 ];
                 $session->set($ses_data);
 
+                $auditModel = new \App\Models\AuditModel();
+                $auditModel->insert([
+                    'user_id' => $user['id'],
+                    'action' => 'LOGIN',
+                    'details' => "User logged in successfully"
+                ]);
+
                 if (! $user['is_password_changed']) {
                     $session->setFlashdata('warning', 'You must change your password before proceeding.');
                     return redirect()->to('/password/change');
@@ -49,10 +56,22 @@ class Auth extends BaseController
 
                 return redirect()->to('/dashboard');
             } else {
+                $auditModel = new \App\Models\AuditModel();
+                $auditModel->insert([
+                    'user_id' => $user['id'],
+                    'action' => 'LOGIN_FAILED',
+                    'details' => "Failed login attempt: Invalid password"
+                ]);
                 $session->setFlashdata('error', 'Invalid password.');
                 return redirect()->to('/login');
             }
         } else {
+            $auditModel = new \App\Models\AuditModel();
+            $auditModel->insert([
+                'user_id' => null,
+                'action' => 'LOGIN_FAILED',
+                'details' => "Failed login attempt for non-existent email: $email"
+            ]);
             $session->setFlashdata('error', 'Email not found.');
             return redirect()->to('/login');
         }
@@ -60,6 +79,15 @@ class Auth extends BaseController
 
     public function logout()
     {
+        $userId = session()->get('id');
+        if ($userId) {
+            $auditModel = new \App\Models\AuditModel();
+            $auditModel->insert([
+                'user_id' => $userId,
+                'action' => 'LOGOUT',
+                'details' => "User logged out"
+            ]);
+        }
         session()->destroy();
         return redirect()->to('/login');
     }
@@ -88,6 +116,13 @@ class Auth extends BaseController
         $model->update($id, [
             'password' => $newPassword,
             'is_password_changed' => true
+        ]);
+
+        $auditModel = new \App\Models\AuditModel();
+        $auditModel->insert([
+            'user_id' => $id,
+            'action' => 'PASSWORD_CHANGE',
+            'details' => "User changed their password"
         ]);
 
         $session->setFlashdata('success', 'Password changed successfully.');
@@ -164,6 +199,13 @@ class Auth extends BaseController
             'reset_token' => null,
             'reset_expires' => null,
             'is_password_changed' => true
+        ]);
+
+        $auditModel = new \App\Models\AuditModel();
+        $auditModel->insert([
+            'user_id' => $user['id'],
+            'action' => 'PASSWORD_RESET',
+            'details' => "User reset their password via token"
         ]);
 
         session()->setFlashdata('success', 'Password reset successfully. Please log in.');

@@ -18,4 +18,15 @@ class AuditModel extends Model
     protected $useTimestamps = true;
     protected $createdField  = 'timestamp';
     protected $updatedField  = '';
+
+    // Callbacks
+    protected $beforeInsert = ['captureIp'];
+
+    protected function captureIp(array $data)
+    {
+        if (!isset($data['data']['ip_address'])) {
+            $data['data']['ip_address'] = service('request')->getIPAddress();
+        }
+        return $data;
+    }
 }

@@ -157,7 +157,7 @@
     </form>
 
     <div class="d-flex justify-content-center mt-4">
-        <?= $pager->links() ?>
+        <?= $pager->links('default', 'bootstrap_full') ?>
     </div>
 </div>
 

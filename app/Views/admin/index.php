@@ -109,15 +109,20 @@
         <h3 class="card-title mb-3">Recent Activity</h3>
         <div class="activity-list">
             <?php foreach ($stats['recent_activity'] as $log): ?>
-                <div class="activity-item py-2 d-flex justify-content-between">
-                    <div class="activity-content d-flex align-items-center">
-                        <span class="activity-dot me-2" style="background: <?= 
-                            ($log['action'] == 'QUIZ_SUBMIT') ? '#10b981' : 
-                            (($log['action'] == 'CHEAT_VIOLATION') ? '#ef4444' : '#3b82f6') 
-                        ?>; width: 8px; height: 8px; border-radius: 50%;"></span>
-                        <span class="activity-text small"><?= $log['first_name'] ?> <?= $log['action'] ?></span>
+                <div class="activity-item py-2 d-flex flex-column border-bottom" style="border-color: #f1f5f9 !important;">
+                    <div class="activity-content d-flex align-items-center justify-content-between w-100">
+                        <div class="d-flex align-items-center">
+                            <span class="activity-dot me-2" style="background: <?= 
+                                ($log['action'] == 'QUIZ_SUBMIT') ? '#10b981' : 
+                                (($log['action'] == 'CHEAT_VIOLATION') ? '#ef4444' : '#3b82f6') 
+                            ?>; width: 8px; height: 8px; border-radius: 50%;"></span>
+                            <span class="activity-text small fw-bold text-dark"><?= $log['first_name'] ?> <?= $log['last_name'] ?></span>
+                        </div>
+                        <span class="activity-time text-muted x-small"><?= date('H:i', strtotime($log['timestamp'])) ?></span>
                     </div>
-                    <span class="activity-time text-muted small"><?= date('H:i', strtotime($log['timestamp'])) ?></span>
+                    <div class="activity-detail text-muted ps-3 mt-1" style="font-size: 0.75rem; line-height: 1.2;">
+                        <?= $log['details'] ?>
+                    </div>
                 </div>
             <?php endforeach; ?>
             <?php if (empty($stats['recent_activity'])): ?>
@@ -129,14 +134,14 @@
 
 <!-- ACTION BUTTONS -->
 <div class="action-row mt-4 d-flex gap-3">
-    <a href="<?= base_url('admin/analytics') ?>" class="action-btn primary btn px-4 py-2 text-white" style="background: #3b82f6; border-radius: 8px; text-decoration: none;">
-        <i class="bi bi-list-check me-2"></i> View Statistics
-    </a>
     <a href="<?= base_url('admin/users') ?>" class="action-btn teal btn px-4 py-2 text-white" style="background: #0d9488; border-radius: 8px; text-decoration: none;">
         <i class="bi bi-people-fill me-2"></i> Manage Users
     </a>
     <a href="<?= base_url('admin/analytics') ?>" class="action-btn blue btn px-4 py-2 text-white" style="background: #1e3a8a; border-radius: 8px; text-decoration: none;">
-        <i class="bi bi-file-earmark-bar-graph me-2"></i> Detailed Reports
+        <i class="bi bi-file-earmark-bar-graph me-2"></i> Analytics & Reports
+    </a>
+    <a href="<?= base_url('admin/assignments') ?>" class="action-btn primary btn px-4 py-2 text-white" style="background: #3b82f6; border-radius: 8px; text-decoration: none;">
+        <i class="bi bi-clipboard-check-fill me-2"></i> Manage Assignments
     </a>
 </div>
 <?= $this->endSection() ?>

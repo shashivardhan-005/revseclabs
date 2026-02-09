@@ -1,6 +1,11 @@
 <?= $this->extend('layout/admin') ?>
 
 <?= $this->section('title') ?><?= $quiz ? 'Edit' : 'Create' ?> Quiz<?= $this->endSection() ?>
+<?php 
+    $timeFormat = get_setting('time_format', '24h');
+    $phpFormat = ($timeFormat === '12h') ? 'Y-m-d h:i A' : 'Y-m-d H:i';
+    $flatFormat = ($timeFormat === '12h') ? 'Y-m-d h:i K' : 'Y-m-d H:i';
+?>
 
 <?= $this->section('content') ?>
 <div class="content-card">
@@ -24,11 +29,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Start Time</label>
-                                <input type="datetime-local" name="start_time" class="form-control" value="<?= (isset($quiz['start_time']) && $quiz['start_time']) ? date('Y-m-d\TH:i', strtotime($quiz['start_time'])) : '' ?>" required>
+                                <input type="text" name="start_time" class="form-control flatpickr" value="<?= (isset($quiz['start_time']) && $quiz['start_time']) ? date($phpFormat, strtotime($quiz['start_time'])) : '' ?>" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">End Time</label>
-                                <input type="datetime-local" name="end_time" class="form-control" value="<?= (isset($quiz['end_time']) && $quiz['end_time']) ? date('Y-m-d\TH:i', strtotime($quiz['end_time'])) : '' ?>" required>
+                                <input type="text" name="end_time" class="form-control flatpickr" value="<?= (isset($quiz['end_time']) && $quiz['end_time']) ? date($phpFormat, strtotime($quiz['end_time'])) : '' ?>" required>
                             </div>
                         </div>
                         <div class="row">
@@ -97,4 +102,15 @@
         </div>
     </form>
 </div>
+<?= $this->endSection() ?>
+
+<?= $this->section('extra_js') ?>
+<script>
+    flatpickr(".flatpickr", {
+        enableTime: true,
+        dateFormat: "<?= $flatFormat ?>",
+        time_24hr: <?= ($timeFormat === '24h') ? 'true' : 'false' ?>,
+        allowInput: true
+    });
+</script>
 <?= $this->endSection() ?>

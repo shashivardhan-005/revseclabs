@@ -6,6 +6,7 @@
     <title>Certificate of Completion - <?= esc($quiz['name']) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="<?= base_url('static/images/revseclabs-logo.png') ?>">
     <style>
         :root {
             --cert-gold: #c5a059;

@@ -3,19 +3,20 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $this->renderSection('title') ?> | VIYONA FINTECH Admin</title>
+    <title><?= $this->renderSection('title') ?> | <?= get_setting('site_name', 'RevSecLabs') ?> Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= base_url('static/css/admin_custom.css') ?>">
     <link rel="icon" type="image/png" href="<?= base_url('static/images/revseclabs-logo.png') ?>">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <?= $this->renderSection('extra_css') ?>
 </head>
 <body>
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
         <div class="sidebar-brand">
-            <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="VIYONA FINTECH" height="30" class="me-2">
-            <span>VIYONA FINTECH</span>
+            <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="RevSecLabs" height="30" class="me-2">
+            <span><?= get_setting('site_name', 'RevSecLabs') ?></span>
         </div>
         <ul class="sidebar-nav">
             <li><a href="<?= base_url('admin') ?>" class="<?= (current_url() == base_url('admin')) ? 'active' : '' ?>"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
@@ -23,10 +24,18 @@
             <li><a href="<?= base_url('admin/quizzes') ?>" class="<?= (current_url() == base_url('admin/quizzes')) ? 'active' : '' ?>"><i class="bi bi-journal-text"></i><span>Quizzes</span></a></li>
             <li><a href="<?= base_url('admin/assignments') ?>" class="<?= (current_url() == base_url('admin/assignments')) ? 'active' : '' ?>"><i class="bi bi-clipboard-check-fill"></i><span>Assignments</span></a></li>
             <li><a href="<?= base_url('admin/questions') ?>" class="<?= (current_url() == base_url('admin/questions')) ? 'active' : '' ?>"><i class="bi bi-database-fill"></i><span>Question Bank</span></a></li>
-            <li><a href="<?= base_url('admin/profile-requests') ?>" class="<?= (current_url() == base_url('admin/profile-requests')) ? 'active' : '' ?>"><i class="bi bi-check-circle-fill"></i><span>Approvals</span></a></li>
+            <li>
+                <a href="<?= base_url('admin/profile-requests') ?>" class="<?= (current_url() == base_url('admin/profile-requests')) ? 'active' : '' ?>">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Approvals</span>
+                    <?php if (isset($pending_requests_count) && $pending_requests_count > 0): ?>
+                        <span class="badge rounded-pill bg-danger ms-auto"><?= $pending_requests_count ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
             <li><a href="<?= base_url('admin/analytics') ?>" class="<?= (current_url() == base_url('admin/analytics')) ? 'active' : '' ?>"><i class="bi bi-bar-chart-fill"></i><span>Reports</span></a></li>
             <li><a href="<?= base_url('admin/audit-logs') ?>" class="<?= (current_url() == base_url('admin/audit-logs')) ? 'active' : '' ?>"><i class="bi bi-file-text-fill"></i><span>Audit Logs</span></a></li>
-            <li><a href="#"><i class="bi bi-gear-fill"></i><span>Settings</span></a></li>
+            <li><a href="<?= base_url('admin/settings') ?>" class="<?= (current_url() == base_url('admin/settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Settings</span></a></li>
             <li class="mt-4"><a href="<?= base_url('dashboard') ?>"><i class="bi bi-arrow-left-circle-fill"></i><span>User Panel</span></a></li>
         </ul>
     </aside>
@@ -37,14 +46,22 @@
         <header class="top-header">
             <div class="header-info d-flex align-items-center justify-content-between w-100 px-4">
                 <div class="d-flex align-items-center gap-3">
-                    <button class="btn btn-link text-white p-0 d-md-none" id="sidebarToggle">
+                    <button class="btn btn-link text-white p-0 d-lg-none" id="sidebarToggle">
                         <i class="bi bi-list fs-3"></i>
                     </button>
                     <span class="header-quiz-name">
                         Admin Control Panel
                     </span>
                 </div>
-                <div class="header-actions">
+                <div class="header-actions d-flex align-items-center gap-3">
+                    <?php if (isset($pending_requests_count) && $pending_requests_count > 0): ?>
+                        <a href="<?= base_url('admin/profile-requests') ?>" class="text-white position-relative me-2" title="Pending Profile Requests">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                <span class="visually-hidden">New requests</span>
+                            </span>
+                        </a>
+                    <?php endif; ?>
                     <span class="me-3 text-muted d-none d-md-inline">Welcome, <?= session()->get('first_name') ?></span>
                     <a href="<?= base_url('logout') ?>" class="btn btn-outline-danger btn-sm">Logout</a>
                 </div>
@@ -80,6 +97,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         // Mobile Sidebar Toggle
         const sidebarToggle = document.getElementById('sidebarToggle');

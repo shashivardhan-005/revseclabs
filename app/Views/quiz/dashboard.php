@@ -3,6 +3,12 @@
 <?= $this->section('title') ?>Dashboard<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold text-white">User Dashboard</h2>
+        <hr class="text-white opacity-25">
+    </div>
+</div>
 <div class="row g-4">
     <!-- Left Column: User Info & Progress -->
     <div class="col-lg-4">

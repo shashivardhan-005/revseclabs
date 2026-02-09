@@ -11,6 +11,7 @@ use App\Models\QuestionModel;
 use App\Models\TopicModel;
 use App\Models\OptionModel;
 use App\Models\ProfileChangeRequestModel;
+use App\Models\SettingModel;
 use App\Models\ResponseModel;
 use App\Libraries\EmailLibrary;
 use CodeIgniter\Controller;
@@ -23,9 +24,27 @@ class Admin extends BaseController
         
         // Basic Staff Check
         if (!session()->get('isLoggedIn') || !session()->get('is_staff')) {
-            // In a real app, use a Filter. For this migration, we check in controller.
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
+
+        // Global Pending Requests Count for Layout
+        $requestModel = new ProfileChangeRequestModel();
+        $pendingCount = $requestModel->where('is_approved', false)
+                                     ->where('is_rejected', false)
+                                     ->countAllResults();
+        
+        \Config\Services::renderer()->setData(['pending_requests_count' => $pendingCount]);
+
+        // Access Logging
+        $auditModel = new AuditModel();
+        $uri = $this->request->getUri();
+        $path = $uri->getPath();
+
+        $auditModel->insert([
+            'user_id' => session()->get('id'),
+            'action' => 'ADMIN_ACCESS',
+            'details' => "Accessed admin path: /$path"
+        ]);
     }
 
     public function index()
@@ -82,25 +101,31 @@ class Admin extends BaseController
         }
 
         // Recent Activity
-        $stats['recent_activity'] = $auditModel->select('audit_logs.*, users.first_name, users.last_name')
+        $stats['recent_activity'] = $auditModel->select('audit_logs.*, users.first_name, users.last_name, users.email')
                                              ->join('users', 'users.id = audit_logs.user_id', 'left')
                                              ->orderBy('timestamp', 'DESC')
                                              ->limit(5)
                                              ->findAll();
 
-        return view('admin/index', ['stats' => $stats]);
+        return view('admin/index', ['status' => $stats, 'stats' => $stats]);
     }
 
     public function analytics()
     {
+        $quizModel = new QuizModel();
         $assignmentModel = new AssignmentModel();
         $userModel = new UserModel();
-        $auditModel = new AuditModel();
+        $attemptModel = new AttemptModel();
+
+        $quizId = $this->request->getGet('quiz_id');
+        $quizzes = $quizModel->orderBy('name', 'ASC')->findAll();
 
         // 1. Completion Status
-        $statusCounts = $assignmentModel->select('status, COUNT(*) as count')
-                                       ->groupBy('status')
-                                       ->findAll();
+        $statusQuery = $assignmentModel->select('status, COUNT(*) as count');
+        if (!empty($quizId)) {
+            $statusQuery->where('quiz_id', $quizId);
+        }
+        $statusCounts = $statusQuery->groupBy('status')->findAll();
         
         $statusData = ['ASSIGNED' => 0, 'STARTED' => 0, 'COMPLETED' => 0];
         foreach ($statusCounts as $row) {
@@ -108,13 +133,16 @@ class Admin extends BaseController
         }
 
         // 2. Department Performance
-        $deptPerformance = $userModel->select('department, AVG(quiz_assignments.score) as avg_score')
-                                    ->join('quiz_assignments', 'quiz_assignments.user_id = users.id')
-                                    ->where('department !=', '')
-                                    ->groupBy('department')
-                                    ->orderBy('avg_score', 'DESC')
-                                    ->limit(5)
-                                    ->findAll();
+        $deptQuery = $userModel->select('department, AVG(quiz_assignments.score) as avg_score')
+                               ->join('quiz_assignments', 'quiz_assignments.user_id = users.id')
+                               ->where('department !=', '');
+        if (!empty($quizId)) {
+            $deptQuery->where('quiz_assignments.quiz_id', $quizId);
+        }
+        $deptPerformance = $deptQuery->groupBy('department')
+                                   ->orderBy('avg_score', 'DESC')
+                                   ->limit(5)
+                                   ->findAll();
 
         $deptLabels = [];
         $deptScores = [];
@@ -123,13 +151,22 @@ class Admin extends BaseController
             $deptScores[] = round($item['avg_score'] ?: 0, 1);
         }
 
-        // 3. Violations Details
-        $violations = $auditModel->where('action', 'CHEAT_VIOLATION')
-                                ->select('details, COUNT(*) as count')
-                                ->groupBy('details')
-                                ->findAll();
+        // 3. Violations Details (from attempts table)
+        $violationQuery = $attemptModel->select('SUM(full_screen_violations) as fs_count, SUM(tab_switch_violations) as ts_count');
+        if (!empty($quizId)) {
+            $violationQuery->join('quiz_assignments', 'quiz_assignments.id = quiz_attempts.assignment_id')
+                           ->where('quiz_assignments.quiz_id', $quizId);
+        }
+        $vCounts = $violationQuery->first();
+
+        $violations = [
+            ['details' => 'Full Screen Exits', 'count' => $vCounts['fs_count'] ?: 0],
+            ['details' => 'Tab Switch Detected', 'count' => $vCounts['ts_count'] ?: 0]
+        ];
 
         return view('admin/analytics', [
+            'quizzes' => $quizzes,
+            'selected_quiz_id' => $quizId,
             'status_labels' => array_keys($statusData),
             'status_values' => array_values($statusData),
             'dept_labels' => $deptLabels,
@@ -141,14 +178,41 @@ class Admin extends BaseController
     public function auditLogs()
     {
         $auditModel = new AuditModel();
-        $logs = $auditModel->select('audit_logs.*, users.email')
+        $get = $this->request->getGet();
+        
+        $search = $get['search'] ?? '';
+        $action = $get['action'] ?? '';
+
+        $query = $auditModel->select('audit_logs.*, users.email, users.first_name, users.last_name')
                           ->join('users', 'users.id = audit_logs.user_id', 'left')
-                          ->orderBy('timestamp', 'DESC')
-                          ->paginate(20);
+                          ->orderBy('timestamp', 'DESC');
+
+        if (!empty($search)) {
+            $query->groupStart()
+                  ->like('users.email', $search)
+                  ->orLike('users.first_name', $search)
+                  ->orLike('users.last_name', $search)
+                  ->orLike('audit_logs.details', $search)
+                  ->groupEnd();
+        }
+
+        if (!empty($action)) {
+            $query->where('audit_logs.action', $action);
+        }
+
+        $logs = $query->paginate(20, 'default');
+        
+        // Fetch distinct actions for the filter dropdown
+        $actions = $auditModel->select('action')->distinct()->orderBy('action', 'ASC')->findAll();
 
         return view('admin/audit_logs', [
             'logs' => $logs,
-            'pager' => $auditModel->pager
+            'pager' => $auditModel->pager,
+            'actions' => array_column($actions, 'action'),
+            'filters' => [
+                'search' => $search,
+                'action' => $action
+            ]
         ]);
     }
 
@@ -253,12 +317,17 @@ class Admin extends BaseController
         $currentUserId = session()->get('user_id');
 
         foreach ($userIds as $id) {
-            if ($id != $currentUserId) {
                 $userModel->delete($id);
                 $deleted++;
+                
+                $auditModel = new AuditModel();
+                $auditModel->insert([
+                    'user_id' => session()->get('id'),
+                    'action' => 'DELETE_USER',
+                    'details' => "Deleted user ID: $id"
+                ]);
             }
-        }
-
+        
         return redirect()->to('/admin/users')->with('success', "$deleted users deleted successfully.");
     }
 
@@ -269,6 +338,14 @@ class Admin extends BaseController
             return redirect()->back()->with('error', 'You cannot delete yourself.');
         }
         $userModel->delete($id);
+
+        $auditModel = new AuditModel();
+        $auditModel->insert([
+            'user_id' => session()->get('id'),
+            'action' => 'DELETE_USER',
+            'details' => "Deleted user ID: $id"
+        ]);
+
         return redirect()->to('/admin/users')->with('success', 'User deleted successfully.');
     }
 
@@ -444,9 +521,20 @@ class Admin extends BaseController
 
         if (isset($data['id']) && !empty($data['id'])) {
             $quizModel->update($data['id'], $data);
+            $action = 'UPDATE_QUIZ';
+            $details = "Updated quiz '{$data['name']}' (#{$data['id']})";
         } else {
-            $quizModel->insert($data);
+            $id = $quizModel->insert($data);
+            $action = 'CREATE_QUIZ';
+            $details = "Created new quiz '{$data['name']}' (#$id)";
         }
+
+        $auditModel = new \App\Models\AuditModel();
+        $auditModel->insert([
+            'user_id' => session()->get('id'),
+            'action' => $action,
+            'details' => $details
+        ]);
 
         return redirect()->to('/admin/quizzes')->with('success', 'Quiz saved successfully.');
     }
@@ -516,6 +604,13 @@ class Admin extends BaseController
             
             // Delete attempts
             $attemptModel->where('assignment_id', $id)->delete();
+
+            $auditModel = new AuditModel();
+            $auditModel->insert([
+                'user_id' => session()->get('id'),
+                'action' => 'APPROVE_RETEST',
+                'details' => "Approved retest for assignment #$id"
+            ]);
         }
 
         return redirect()->to('/admin/assignments')->with('success', 'Retest approved and progress reset.');
@@ -778,6 +873,31 @@ class Admin extends BaseController
         return redirect()->to('/admin/profile-requests')->with('success', 'Profile change rejected.');
     }
 
+    public function settings()
+    {
+        $settingModel = new SettingModel();
+        return view('admin/settings', [
+            'settings' => $settingModel->getAllGrouped()
+        ]);
+    }
+
+    public function saveSettings()
+    {
+        $settingModel = new SettingModel();
+        $postData = $this->request->getPost();
+
+        foreach ($postData as $key => $value) {
+        // Skip CSRF token and empty keys
+        if ($key === 'csrf_test_name' || empty($key)) {
+            continue;
+        }
+        // Only update keys that exist in our schema or are prefixed correctly
+        $settingModel->updateByKey($key, $value);
+    }
+
+        return redirect()->to('/admin/settings')->with('success', 'Settings updated successfully.');
+    }
+
     public function toggleResultsRelease($id)
     {
         $quizModel = new QuizModel();
@@ -808,7 +928,7 @@ class Admin extends BaseController
         $emailLib = new EmailLibrary();
         $quizModel = new QuizModel();
         $attemptModel = new AttemptModel();
-        $responseModel = new ResponseModel();
+        $responseModel = new \App\Models\ResponseModel();
         $questionModel = new QuestionModel();
         $optionModel = new OptionModel();
         

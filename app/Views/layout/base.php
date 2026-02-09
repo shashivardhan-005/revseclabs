@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $this->renderSection('title') ?> - VIYONA FINTECH</title>
+    <title><?= $this->renderSection('title') ?> | <?= get_setting('site_name', 'RevSecLabs') ?></title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="<?= base_url('static/images/revseclabs-logo.png') ?>">
@@ -23,8 +23,8 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="<?= base_url('dashboard') ?>">
-                <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="VIYONA FINTECH" height="30" class="me-2">
-                <span>VIYONA FINTECH</span>
+                <img src="<?= base_url('static/images/revseclabs-logo.png') ?>" alt="RevSecLabs" height="30" class="me-2">
+                <span><?= get_setting('site_name', 'RevSecLabs') ?></span>
             </a>
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -42,10 +42,6 @@
                         <a href="<?= base_url('logout') ?>" class="btn btn-outline-danger btn-sm px-4">
                             <i class="bi bi-box-arrow-right me-1"></i>Logout
                         </a>
-                    </li>
-                    <?php else: ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= base_url('/') ?>">Portal Access</a>
                     </li>
                     <?php endif; ?>
                 </ul>
@@ -87,7 +83,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                    <p class="mb-0 text-black small">© <?= date('Y') ?> VIYONA FINTECH. All rights reserved.</p>
+                    <p class="mb-0 text-black small">© <?= date('Y') ?> RevSecLabs. All rights reserved.</p>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
                     <p class="mb-0 text-black small">Designed for Professional Awareness</p>

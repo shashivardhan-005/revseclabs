@@ -155,7 +155,7 @@ class Quiz extends BaseController
             $auditModel->insert([
                 'user_id' => session()->get('id'),
                 'action' => 'QUIZ_START',
-                'details' => "Started quiz assignment: $assignmentId"
+                'details' => "Started quiz '{$quiz['name']}' (Assignment #$assignmentId)"
             ]);
 
             // For a fresh attempt, remaining time is full duration
@@ -282,7 +282,7 @@ class Quiz extends BaseController
         $auditModel->insert([
             'user_id' => session()->get('id'),
             'action' => 'QUIZ_SUBMIT',
-            'details' => "Submitted quiz with score: $finalScore"
+            'details' => "Submitted quiz '{$quiz['name']}' (Assignment #$assignmentId) with score: " . round($finalScore, 2) . "%"
         ]);
 
         session()->setFlashdata('success', 'Quiz submitted successfully.');
@@ -309,11 +309,16 @@ class Quiz extends BaseController
                 $attemptModel->update($attempt['id'], ['full_screen_violations' => $attempt['full_screen_violations'] + 1]);
             }
 
+            $quizModel = new \App\Models\QuizModel();
+            $assignmentModel = new AssignmentModel();
+            $assignment = $assignmentModel->find($assignmentId);
+            $quiz = $quizModel->find($assignment['quiz_id']);
+
             $auditModel = new AuditModel();
             $auditModel->insert([
                 'user_id' => session()->get('id'),
                 'action' => 'CHEAT_VIOLATION',
-                'details' => "$type violation in quiz assignment $assignmentId"
+                'details' => "$type violation in quiz '{$quiz['name']}' (Assignment #$assignmentId)"
             ]);
         }
 

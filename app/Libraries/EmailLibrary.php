@@ -11,6 +11,20 @@ class EmailLibrary
     public function __construct()
     {
         $this->email = \Config\Services::email();
+        
+        // Load dynamic config from database via setting helper
+        $config = [
+            'fromEmail'  => get_setting('email_sender_email', 'revseclabs@gmail.com'),
+            'fromName'   => get_setting('email_sender_name', 'RevSecLabs Admin'),
+            'SMTPHost'   => get_setting('email_smtp_host', 'smtp.gmail.com'),
+            'SMTPUser'   => get_setting('email_smtp_user', 'revseclabs@gmail.com'),
+            'SMTPPass'   => get_setting('email_smtp_pass', 'qjcjuhtnxvxuaucu'),
+            'SMTPPort'   => (int)get_setting('email_smtp_port', 587),
+            'SMTPCrypto' => get_setting('email_smtp_crypto', 'tls'),
+            'protocol'   => get_setting('email_service_mode', 'smtp') === 'api' ? 'mail' : 'smtp',
+        ];
+        
+        $this->email->initialize($config);
     }
 
     /**
@@ -58,7 +72,7 @@ class EmailLibrary
             return false;
         }
 
-        return $this->send($email, 'Welcome to VIYONA FINTECH Quiz Platform', 'welcome', [
+        return $this->send($email, 'Welcome to RevSecLabs Quiz Platform', 'welcome', [
             'first_name' => $this->getUserValue($user, 'first_name'),
             'email' => $email,
             'password' => $password

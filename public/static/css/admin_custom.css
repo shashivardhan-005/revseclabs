@@ -163,8 +163,14 @@ div.breadcrumbs {
     }
 
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
         width: 100%;
+        padding-top: 60px;
+    }
+
+    #container {
+        margin-left: 0 !important;
+        padding-top: 60px !important;
     }
 
     .custom-top-bar {
@@ -280,7 +286,7 @@ div.breadcrumbs {
 /* === KPI CARDS ROW === */
 .kpi-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -348,7 +354,7 @@ div.breadcrumbs {
 /* === CONTENT CARDS === */
 .content-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 20px;
     margin-bottom: 20px;
 }
@@ -550,32 +556,6 @@ div.breadcrumbs {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     color: var(--text-white);
-}
-
-/* === RESPONSIVE === */
-@media (max-width: 1200px) {
-    .kpi-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 992px) {
-    .admin-sidebar {
-        width: 70px;
-    }
-
-    .sidebar-brand span,
-    .sidebar-nav a span {
-        display: none;
-    }
-
-    .main-content {
-        margin-left: 70px;
-    }
-
-    .content-row {
-        grid-template-columns: 1fr;
-    }
 }
 
 @media (max-width: 768px) {
@@ -962,61 +942,7 @@ div.breadcrumbs {
     text-decoration: none;
 }
 
-/* === RESPONSIVE === */
-@media (max-width: 1200px) {
-    .kpi-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    #container {
-        margin-left: 220px !important;
-    }
-}
-
-@media (max-width: 992px) {
-    .admin-sidebar {
-        width: 70px;
-    }
-
-    .sidebar-brand span,
-    .sidebar-nav a span {
-        display: none;
-    }
-
-    #container,
-    .main-content {
-        margin-left: 70px !important;
-    }
-
-    .content-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .kpi-row {
-        grid-template-columns: 1fr;
-    }
-
-    .action-row {
-        flex-direction: column;
-    }
-
-    .action-btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .admin-sidebar {
-        display: none;
-    }
-
-    #container,
-    .main-content {
-        margin-left: 0 !important;
-    }
-}
-
+/* End of Sidebar Logic */
 /* === ENHANCED PAGE STYLING FOR ALL ADMIN PAGES === */
 
 /* Page Title Section */

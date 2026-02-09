@@ -3,6 +3,12 @@
 <?= $this->section('title') ?>My Profile<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold text-white">My Profile</h2>
+        <hr class="text-white opacity-25">
+    </div>
+</div>
 <div class="row g-4 justify-content-center">
     <!-- Header: Prominent Profile Info -->
     <div class="col-lg-11">
@@ -14,29 +20,29 @@
                             <?= strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1)) ?>
                         </div>
                         <h4 class="text-white mb-1"><?= esc($user['first_name'] . ' ' . $user['last_name']) ?></h4>
-                        <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3">Verified Member</span>
+                        <span class="badge bg-white text-primary rounded-pill px-3 fw-bold">Verified Member</span>
                     </div>
                     <div class="col-md p-4 d-flex align-items-center">
                         <div class="row w-100 g-4">
-                            <div class="col-sm-4">
+                            <div class="col-md-6">
                                 <label class="text-muted small text-uppercase fw-bold d-block mb-1">Email Address</label>
-                                <div class="d-flex align-items-center">
+                                <div class="d-flex align-items-center overflow-hidden">
                                     <i class="bi bi-envelope me-2 text-primary"></i>
-                                    <span class="fw-bold"><?= esc($user['email']) ?></span>
+                                    <span class="fw-bold text-nowrap"><?= esc($user['email']) ?></span>
                                 </div>
                             </div>
-                            <div class="col-sm-4">
-                                <label class="text-muted small text-uppercase fw-bold d-block mb-1">Department</label>
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-building me-2 text-primary"></i>
-                                    <span class="fw-bold"><?= esc($user['department'] ?: 'General') ?></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
+                            <div class="col-md-3">
                                 <label class="text-muted small text-uppercase fw-bold d-block mb-1">Joined Since</label>
-                                <div class="d-flex align-items-center">
+                                <div class="d-flex align-items-center text-nowrap">
                                     <i class="bi bi-calendar-check me-2 text-primary"></i>
                                     <span class="fw-bold"><?= date('M d, Y', strtotime($user['created_at'])) ?></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small text-uppercase fw-bold d-block mb-1">Department</label>
+                                <div class="d-flex align-items-center text-nowrap">
+                                    <i class="bi bi-building me-2 text-primary"></i>
+                                    <span class="fw-bold"><?= esc($user['department'] ?: 'General') ?></span>
                                 </div>
                             </div>
                         </div>
