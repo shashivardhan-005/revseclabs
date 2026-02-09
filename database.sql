@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(150),
     is_staff BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
+    reset_token VARCHAR(64) DEFAULT NULL,
+    reset_expires DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -89,6 +91,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
     score FLOAT DEFAULT 0.0,
     full_screen_violations INT DEFAULT 0,
     tab_switch_violations INT DEFAULT 0,
+    violation_auto_submitted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (assignment_id) REFERENCES quiz_assignments(id) ON DELETE CASCADE
 );
 

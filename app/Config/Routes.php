@@ -86,4 +86,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers'], static function ($ro
 
     // Export
     $routes->get('quizzes/export/(:num)', 'Admin::exportResults/$1');
+
+    // API for Real-time Updates
+    $routes->get('get-pending-count', 'Admin::getPendingCount');
 });

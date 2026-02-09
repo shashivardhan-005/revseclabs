@@ -29,9 +29,11 @@ class ExtendedEmail extends Email
         }
 
         // --- CUSTOM START ---
-        // Create a custom stream context to bypass SSL verification in development
+        // Create a custom stream context to bypass SSL verification if setting is disabled
+        $verifySsl = (get_setting('email_smtp_verify_ssl', '1') === '1');
+        
         $contextOptions = [];
-        if (ENVIRONMENT === 'development') {
+        if (!$verifySsl || ENVIRONMENT === 'development') {
             $contextOptions = [
                 'ssl' => [
                     'verify_peer'      => false,

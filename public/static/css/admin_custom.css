@@ -12,7 +12,7 @@
     --sidebar-active: #3b82f6;
 
     /* Background - Clean Light Blue */
-    --body-bg: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #e0f2fe 100%);
+    --body-bg: linear-gradient(135deg, #eb8896 0%, #93b4f1 50%, #f991f6 100%);
 
     /* Card Colors - Vibrant Gradients */
     --card-blue: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);

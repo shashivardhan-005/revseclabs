@@ -27,13 +27,8 @@ class Admin extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
 
-        // Global Pending Requests Count for Layout
-        $requestModel = new ProfileChangeRequestModel();
-        $pendingCount = $requestModel->where('is_approved', false)
-                                     ->where('is_rejected', false)
-                                     ->countAllResults();
         
-        \Config\Services::renderer()->setData(['pending_requests_count' => $pendingCount]);
+        \Config\Services::renderer()->setData(['is_admin_layout' => true]);
 
         // Access Logging
         $auditModel = new AuditModel();
@@ -971,5 +966,15 @@ class Admin extends BaseController
                 }
             }
         }
+    }
+
+    public function getPendingCount()
+    {
+        $requestModel = new ProfileChangeRequestModel();
+        $pendingCount = $requestModel->where('is_approved', false)
+                                     ->where('is_rejected', false)
+                                     ->countAllResults();
+        
+        return $this->response->setJSON(['count' => $pendingCount]);
     }
 }

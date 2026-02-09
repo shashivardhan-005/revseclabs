@@ -110,6 +110,14 @@
                                             <option value="" <?= ($settings['email_smtp_crypto'] ?? 'tls') === '' ? 'selected' : '' ?>>None</option>
                                         </select>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label for="email_smtp_verify_ssl" class="form-label fw-bold text-muted small text-uppercase">SSL Certificate Verification</label>
+                                        <select class="form-select form-control-lg bg-light border-0" id="email_smtp_verify_ssl" name="email_smtp_verify_ssl">
+                                            <option value="1" <?= ($settings['email_smtp_verify_ssl'] ?? '1') === '1' ? 'selected' : '' ?>>Enabled (Production)</option>
+                                            <option value="0" <?= ($settings['email_smtp_verify_ssl'] ?? '1') === '0' ? 'selected' : '' ?>>Disabled (Trial/Local)</option>
+                                        </select>
+                                        <div class="form-text mt-2 text-muted">Disable this if you get "SSL certificate verify failed" errors on local servers.</div>
+                                    </div>
                                 </div>
                             </div>
                             

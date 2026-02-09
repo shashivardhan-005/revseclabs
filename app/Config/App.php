@@ -16,8 +16,8 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    // public string $baseURL = 'http://10.10.0.195/revseclabs/public/';
-    public string $baseURL = 'https://revseclabs.in/';
+    public string $baseURL = 'http://10.10.0.195/revseclabs/public/';
+    //public string $baseURL = 'https://revseclabs.in/';
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $this->renderSection('title') ?> | <?= get_setting('site_name', 'RevSecLabs') ?> Admin</title>
+    <title><?= $this->renderSection('title') ?> | <?= get_setting('site_name', 'RevSecLabs') ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= base_url('static/css/admin_custom.css') ?>">
@@ -147,6 +147,73 @@
             const modal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
             modal.show();
         }
+    </script>
+    <script>
+        // Real-time Notification Polling
+        let currentPendingCount = <?= $pending_requests_count ?? 0 ?>;
+
+        function updateNotifications() {
+            fetch('<?= base_url('admin/get-pending-count') ?>')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > currentPendingCount) {
+                        // Show Browser Notification if permission granted
+                        if (Notification.permission === "granted") {
+                            new Notification("New Approval Request", {
+                                body: `There are now ${data.count} pending requests needing your attention.`,
+                                icon: '<?= base_url('static/images/revseclabs-logo.png') ?>'
+                            });
+                        }
+                        // Play a subtle sound or just update UI
+                    }
+                    
+                    if (data.count !== currentPendingCount) {
+                        currentPendingCount = data.count;
+                        refreshNotificationUI(data.count);
+                    }
+                })
+                .catch(err => console.error('Notification poll failed:', err));
+        }
+
+        function refreshNotificationUI(count) {
+            // Update Sidebar Badge
+            const sidebarBadge = document.querySelector('.sidebar-nav .badge');
+            const approvalLink = document.querySelector('a[href*="profile-requests"]');
+            
+            if (count > 0) {
+                if (sidebarBadge) {
+                    sidebarBadge.textContent = count;
+                } else if (approvalLink) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge rounded-pill bg-danger ms-auto';
+                    badge.textContent = count;
+                    approvalLink.appendChild(badge);
+                }
+                
+                // Update Bell Icon Badge in Header
+                const bellContainer = document.querySelector('.header-actions a[href*="profile-requests"]');
+                if (bellContainer) {
+                    // Update dot or count if it exists
+                } else {
+                    // Add bell icon if it was hidden
+                    location.reload(); // Simplest way to show the bell if it wasn't there
+                }
+            } else {
+                if (sidebarBadge) sidebarBadge.remove();
+                const bellIcon = document.querySelector('.header-actions a[href*="profile-requests"]');
+                if (bellIcon) bellIcon.remove();
+            }
+        }
+
+        // Request permission on first interaction
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            document.addEventListener('click', function() {
+                Notification.requestPermission();
+            }, { once: true });
+        }
+
+        // Poll every 30 seconds
+        setInterval(updateNotifications, 30000);
     </script>
     <?= $this->renderSection('extra_js') ?>
 </body>

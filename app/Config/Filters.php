@@ -34,6 +34,7 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'adminNotification' => \App\Filters\AdminNotificationFilter::class,
     ];
 
     /**
@@ -75,6 +76,7 @@ class Filters extends BaseFilters
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',
+            'adminNotification',
         ],
         'after' => [
             // 'honeypot',

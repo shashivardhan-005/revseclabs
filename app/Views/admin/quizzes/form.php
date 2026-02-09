@@ -108,7 +108,9 @@
 <script>
     flatpickr(".flatpickr", {
         enableTime: true,
-        dateFormat: "<?= $flatFormat ?>",
+        altInput: true,
+        altFormat: "<?= ($timeFormat === '12h') ? 'Y-m-d h:i K' : 'Y-m-d H:i' ?>",
+        dateFormat: "Y-m-d H:i:S",
         time_24hr: <?= ($timeFormat === '24h') ? 'true' : 'false' ?>,
         allowInput: true
     });

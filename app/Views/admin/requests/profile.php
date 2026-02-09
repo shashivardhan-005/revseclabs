@@ -86,12 +86,13 @@
                 
                 <form id="reject-form" action="" method="post" class="d-inline">
                     <?= csrf_field() ?>
-                    <button type="button" class="btn btn-danger px-4" onclick="confirmFormSubmit(this.form, 'Are you sure you want to REJECT this profile update?');">Reject</button>
+                    
+                    <button type="submit" class="btn btn-danger px-4">Reject</button>
                 </form>
 
                 <form id="approve-form" action="" method="post" class="d-inline">
                     <?= csrf_field() ?>
-                    <button type="button" class="btn btn-success px-4" onclick="confirmFormSubmit(this.form, 'Are you sure you want to APPROVE this profile update?');">Approve</button>
+                    <button type="submit" class="btn btn-success px-4">Approve</button>
                 </form>
             </div>
         </div>
