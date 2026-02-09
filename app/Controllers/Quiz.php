@@ -497,18 +497,25 @@ class Quiz extends BaseController
         $assignments = $assignmentModel->getAssignmentsByUser($userId);
 
         $data = [];
+        $now = time();
         foreach ($assignments as $asm) {
-            $data[] = [
-                'id' => $asm['id'],
-                'quiz_name' => $asm['quiz_name'],
-                'topic_name' => $asm['topic_name'] ?: 'General',
-                'duration_minutes' => $asm['duration_minutes'],
-                'start_time' => $asm['start_time'],
-                'end_time' => $asm['end_time'],
-                'status' => (time() > strtotime($asm['end_time']) && $asm['status'] !== 'COMPLETED') ? 'EXPIRED' : $asm['status'],
-                'start_timestamp' => strtotime($asm['start_time']),
-                'end_timestamp' => strtotime($asm['end_time'])
-            ];
+            $endTime = strtotime($asm['end_time']);
+            
+            // Only include quizzes that are NOT completed AND NOT expired
+            // This matches the assigned_quizzes logic in the dashboard() method
+            if ($asm['status'] !== 'COMPLETED' && $now <= $endTime) {
+                $data[] = [
+                    'id' => $asm['id'],
+                    'quiz_name' => $asm['quiz_name'],
+                    'topic_name' => $asm['topic_name'] ?: 'General',
+                    'duration_minutes' => $asm['duration_minutes'],
+                    'start_time' => $asm['start_time'],
+                    'end_time' => $asm['end_time'],
+                    'status' => $asm['status'],
+                    'start_timestamp' => strtotime($asm['start_time']),
+                    'end_timestamp' => $endTime
+                ];
+            }
         }
 
         return $this->response->setJSON($data);
