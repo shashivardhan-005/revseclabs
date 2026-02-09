@@ -179,7 +179,8 @@
                             <?php foreach ($completed_quizzes as $cq): 
                                 $end = strtotime($cq['end_time']);
                                 $now = time();
-                                $canView = ($now > $end && $cq['results_released']);
+                                // Results are released if the admin says so OR if the quiz time has naturally expired
+                                $canView = ($now > $end || $cq['results_released']);
                             ?>
                             <tr>
                                 <td class="ps-4 fw-bold"><?= esc($cq['quiz_name']) ?></td>

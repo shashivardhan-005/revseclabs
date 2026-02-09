@@ -29,10 +29,13 @@ class Quiz extends BaseController
         $completed_quizzes = [];
         $progress_stats = [];
 
+        $now = time();
         foreach ($assignments as $asm) {
-            if ($asm['status'] === 'COMPLETED') {
+            $endTime = strtotime($asm['end_time']);
+            
+            if ($asm['status'] === 'COMPLETED' || $now > $endTime) {
                 $completed_quizzes[] = $asm;
-                $percent = 100;
+                $percent = ($asm['status'] === 'COMPLETED') ? 100 : 0;
             } else {
                 $assigned_quizzes[] = $asm;
                 $percent = ($asm['status'] === 'STARTED') ? 30 : 0;
@@ -392,10 +395,10 @@ class Quiz extends BaseController
 
         $quiz = $quizModel->find($assignment['quiz_id']);
         
-        // Security check: only show if ended AND released
+        // Security check: only show if ended OR released
         $now = time();
         $endTime = strtotime($quiz['end_time']);
-        if ($now <= $endTime || ! $quiz['results_released']) {
+        if ($now <= $endTime && ! $quiz['results_released']) {
             return redirect()->to('/dashboard')->with('error', 'Results for this assessment are not yet available.');
         }
 
@@ -502,7 +505,7 @@ class Quiz extends BaseController
                 'duration_minutes' => $asm['duration_minutes'],
                 'start_time' => $asm['start_time'],
                 'end_time' => $asm['end_time'],
-                'status' => $asm['status'],
+                'status' => (time() > strtotime($asm['end_time']) && $asm['status'] !== 'COMPLETED') ? 'EXPIRED' : $asm['status'],
                 'start_timestamp' => strtotime($asm['start_time']),
                 'end_timestamp' => strtotime($asm['end_time'])
             ];
