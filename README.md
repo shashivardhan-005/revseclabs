@@ -49,8 +49,8 @@ The platform is built on a modern, secure stack:
 
 1. **Clone & Setup**:
    ```bash
-   git clone https://github.com/revseclabs/cybersecurity-portal.git
-   cd cybersecurity-portal
+   git clone https://github.com/shashivardhan-005/revseclabs.git
+   cd revseclabs
    composer install
    ```
 
