@@ -32,6 +32,7 @@ $routes->get('quiz/get-card-html/(:num)', 'Quiz::getCardHtml/$1');
 // Profile & Settings
 $routes->get('results/(:num)', 'Quiz::results/$1');
 $routes->get('profile', 'Quiz::profile');
+$routes->get('profile/edit', 'Quiz::profileEdit');
 $routes->post('profile/request', 'Quiz::saveProfileRequest');
 
 $routes->group('admin', ['namespace' => 'App\Controllers'], static function ($routes) {

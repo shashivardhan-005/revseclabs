@@ -1,4 +1,4 @@
-<?= $this->extend('layout/base') ?>
+<?= $this->extend('layout/dashboard') ?>
 
 <?= $this->section('title') ?>Submission Successful<?= $this->endSection() ?>
 

@@ -99,11 +99,21 @@ class Quiz extends BaseController
             ];
         }
 
+        // 3. KPI Metrics
+        $totalAssignments = count($assignments);
+        $completedCount = count($completed_quizzes);
+        $kpi = [
+            'active_count' => count($assigned_quizzes),
+            'completion_rate' => $totalAssignments > 0 ? round(($completedCount / $totalAssignments) * 100) : 0,
+            'avg_score' => $completedCount > 0 ? round(array_sum(array_column($completed_quizzes, 'score')) / $completedCount) : 0,
+        ];
+
         return view('quiz/dashboard', [
             'assigned_quizzes' => $assigned_quizzes,
             'incomplete_quizzes' => $incomplete_quizzes,
             'completed_quizzes' => $completed_quizzes,
-            'progress_stats' => $progress_stats
+            'progress_stats' => $progress_stats,
+            'kpi' => $kpi,
         ]);
     }
 
@@ -401,6 +411,19 @@ class Quiz extends BaseController
         if (! session()->get('isLoggedIn')) return redirect()->to('/login');
 
         $userModel = new UserModel();
+        $userId = session()->get('id');
+        $user = $userModel->find($userId);
+
+        return view('quiz/profile', [
+            'user' => $user,
+        ]);
+    }
+
+    public function profileEdit()
+    {
+        if (! session()->get('isLoggedIn')) return redirect()->to('/login');
+
+        $userModel = new UserModel();
         $requestModel = new ProfileChangeRequestModel();
         
         $userId = session()->get('id');
@@ -411,7 +434,7 @@ class Quiz extends BaseController
                                      ->where('is_rejected', false)
                                      ->first();
 
-        return view('quiz/profile', [
+        return view('quiz/profile_edit', [
             'user' => $user,
             'active_request' => $activeRequest
         ]);

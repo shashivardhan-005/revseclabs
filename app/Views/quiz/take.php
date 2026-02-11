@@ -4,6 +4,16 @@
 
 <?= $this->section('extra_css') ?>
 <style>
+    /* Hide navbar for fullscreen quiz */
+    .navbar {
+        display: none !important;
+    }
+
+    /* Remove top padding from main */
+    main.container {
+        padding-top: 0 !important;
+    }
+
     /* Disable selection */
     body {
         user-select: none;

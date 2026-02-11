@@ -1,9 +1,9 @@
-<?= $this->extend('layout/base') ?>
+<?= $this->extend('layout/dashboard') ?>
 
 <?= $this->section('title') ?>Change Password<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<div class="row justify-content-center align-items-center min-vh-100 pb-5">
+<div class="row justify-content-center py-4">
     <div class="col-lg-5 col-md-8">
         <div class="card bg-white rounded-5 shadow-lg border-0 overflow-hidden" style="border-radius: 2rem !important;">
             <div class="card-body p-0">
