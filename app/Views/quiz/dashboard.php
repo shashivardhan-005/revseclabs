@@ -108,6 +108,9 @@
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <span class="badge bg-primary bg-opacity-10 text-primary border-0"><?= esc($asm['topic_display']) ?></span>
+                                <?php if (($asm['retest_count'] ?? 0) >= 1): ?>
+                                    <span class="badge bg-info text-dark border-0 ms-1">Retest Opportunity</span>
+                                <?php endif; ?>
                                 <span class="small text-muted"><i class="bi bi-clock"></i> <?= $asm['duration_minutes'] ?>m</span>
                             </div>
                             
@@ -213,6 +216,16 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-2 align-items-center">
+                                        <?php if ($cq['retest_rejected'] ?? false): ?>
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" title="Retest request denied">
+                                                Retest Rejected
+                                            </span>
+                                        <?php elseif (($cq['retest_count'] ?? 0) >= 1): ?>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" title="Retest attempt used">
+                                                Retest Used
+                                            </span>
+                                        <?php endif; ?>
+
                                         <?php if ($canView): ?>
                                             <?php if (!$failed): ?>
                                                 <a href="<?= base_url('quiz/certificate/'.$cq['id']) ?>" class="btn btn-outline-success btn-sm px-3 rounded-pill" title="Download Certificate">
