@@ -6,9 +6,18 @@
 
 <!-- Welcome Banner -->
 <div class="welcome-card mb-4">
-    <p class="welcome-greeting">Good <?= date('H') < 12 ? 'Morning' : (date('H') < 17 ? 'Afternoon' : 'Evening') ?>,</p>
-    <h3 class="welcome-name"><?= session()->get('first_name') ?> <?= session()->get('last_name') ?> 👋</h3>
-    <p class="welcome-subtitle">Track your cybersecurity awareness progress and complete your assessments.</p>
+    <div class="welcome-content-wrapper">
+        <div class="welcome-text-side">
+            <p class="welcome-greeting">Good <?= date('H') < 12 ? 'Morning' : (date('H') < 17 ? 'Afternoon' : 'Evening') ?></p>
+            <h3 class="welcome-name"><?= session()->get('first_name') ?> <?= session()->get('last_name') ?> 👋</h3>
+            <p class="welcome-subtitle">Track your cybersecurity awareness progress and complete your assessments.</p>
+        </div>
+        <div class="welcome-image-side">
+            <div class="welcome-icon-wrapper">
+                <i class="bi bi-shield-check"></i>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- KPI Cards -->
