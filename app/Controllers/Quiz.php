@@ -148,7 +148,7 @@ class Quiz extends BaseController
             return redirect()->to('/dashboard')->with('error', 'This assessment has not started yet.');
         }
 
-        if ($now > $endTime && $assignment['status'] !== 'COMPLETED') {
+        if ($now > $endTime && $assignment['status'] !== 'COMPLETED' && ($assignment['retest_count'] ?? 0) < 1) {
             return redirect()->to('/dashboard')->with('error', 'This assessment has expired.');
         }
 
@@ -566,7 +566,11 @@ class Quiz extends BaseController
         foreach ($assignments as $asm) {
             $endTime = strtotime($asm['end_time']);
             
-            if ($asm['status'] !== 'COMPLETED' && $now <= $endTime) {
+            $isReleased = ($now >= $endTime || (bool)$asm['results_released']);
+            
+            // Logic must match dashboard(): Include if NOT (Taken AND Released)
+            // i.e. Include if (Not Taken) OR (Taken but Not Released)
+            if ($asm['status'] !== 'COMPLETED' || !$isReleased) {
                 $data[] = [
                     'id' => $asm['id'],
                     'quiz_name' => $asm['quiz_name'],
@@ -575,6 +579,8 @@ class Quiz extends BaseController
                     'start_time' => $asm['start_time'],
                     'end_time' => $asm['end_time'],
                     'status' => $asm['status'],
+                    'retest_count' => $asm['retest_count'],
+                    'retest_rejected' => $asm['retest_rejected'],
                     'start_timestamp' => strtotime($asm['start_time']),
                     'end_timestamp' => $endTime
                 ];
@@ -582,5 +588,21 @@ class Quiz extends BaseController
         }
 
         return $this->response->setJSON($data);
+    }
+
+    public function getCardHtml($id)
+    {
+        if (! session()->get('isLoggedIn')) return $this->response->setStatusCode(401);
+
+        $assignmentModel = new \App\Models\AssignmentModel();
+        $userId = session()->get('id');
+        
+        $asm = $assignmentModel->getAssignmentDetail($id, $userId);
+        
+        if (!$asm) {
+            return $this->response->setStatusCode(404)->setBody('Assignment not found');
+        }
+
+        return view('quiz/partials/quiz_card', ['asm' => $asm, 'now' => time()]);
     }
 }

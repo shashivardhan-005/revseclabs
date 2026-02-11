@@ -93,85 +93,11 @@
             </div>
         <?php else: ?>
             <div class="row g-4">
+
                 <?php foreach ($assigned_quizzes as $asm): 
-                    $now = time();
-                    $start = strtotime($asm['start_time']);
-                    $end = strtotime($asm['end_time']);
-                ?>
-                <div class="col-md-6 quiz-card-container" data-quiz-id="<?= $asm['id'] ?>">
-                    <div class="card h-100 border-0 shadow-sm" 
-                         data-start-time="<?= $start ?>" 
-                         data-end-time="<?= $end ?>"
-                         data-start-url="<?= base_url('quiz/'.$asm['id'].'/start') ?>"
-                         data-end-time-str="<?= date('M d, H:i', $end) ?>"
-                         data-status="<?= $asm['status'] ?>">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <span class="badge bg-primary bg-opacity-10 text-primary border-0"><?= esc($asm['topic_display']) ?></span>
-                                <?php if (($asm['retest_count'] ?? 0) >= 1): ?>
-                                    <span class="badge bg-info text-dark border-0 ms-1">Retest Opportunity</span>
-                                <?php endif; ?>
-                                <span class="small text-muted"><i class="bi bi-clock"></i> <?= $asm['duration_minutes'] ?>m</span>
-                            </div>
-                            
-                            <h5 class="fw-bold mb-3"><?= esc($asm['quiz_name']) ?></h5>
-                            
-                             <div class="timeline-container">
-                                <div class="timeline-line">
-                                    <div class="timeline-progress" style="width: <?= ($now >= $start && $now <= $end) ? (($now - $start) / ($end - $start)) * 100 : ($now > $end ? 100 : 0) ?>%"></div>
-                                    <div class="timeline-point active" style="left: 0;"></div>
-                                    <div class="timeline-point <?= $now >= $end ? 'active' : '' ?>" style="right: 0;"></div>
-                                </div>
-                                <div class="timeline-label timeline-label-start"><?= date('M d, H:i', $start) ?></div>
-                                <div class="timeline-label timeline-label-end"><?= date('M d, H:i', $end) ?></div>
-                                
-                                <div class="status-badge-floating <?= $now < $start ? 'bg-info' : ($now > $end ? 'bg-secondary' : 'bg-success') ?> text-white fw-bold">
-                                    <span id="status-text-<?= $asm['id'] ?>">
-                                        <?php if ($now < $start): ?>
-                                            Upcoming
-                                        <?php elseif ($now > $end): ?>
-                                            Closed
-                                        <?php else: ?>
-                                            Active
-                                        <?php endif; ?>
-                                    </span>
-                                </div>
-                             </div>
-
-                             <div class="mb-4 timer-display-container">
-                                 <!-- Timer will be injected here by JS -->
-                                 <div class="d-flex align-items-center text-muted small fw-bold" style="min-height: 20px;"></div>
-                             </div>
-
-                            <div class="d-grid gap-2">
-                                <?php if ($asm['status'] === 'COMPLETED'): ?>
-                                    <div class="alert alert-success border-0 small py-2 mb-0 d-flex justify-content-between align-items-center">
-                                        <span><i class="bi bi-check-circle-fill me-2"></i> Submitted</span>
-                                        <?php if ($asm['retest_requested']): ?>
-                                            <span class="badge bg-warning text-dark">Retest Requested</span>
-                                        <?php elseif (! ($asm['retest_rejected'] ?? false) && ($asm['retest_count'] ?? 0) < 1): ?>
-                                            <form action="<?= base_url('quiz/retest/' . $asm['id']) ?>" method="post" class="d-inline">
-                                                <?= csrf_field() ?>
-                                                <button type="submit" class="btn btn-link btn-sm text-danger p-0 fw-bold" style="font-size: 0.75rem; text-decoration: none;">
-                                                    <i class="bi bi-arrow-repeat"></i> Request Retest
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php elseif ($now < $start): ?>
-                                    <button class="btn btn-light disabled rounded-3">Upcoming</button>
-                                <?php elseif ($now > $end): ?>
-                                    <button class="btn btn-light disabled rounded-3">Expired</button>
-                                <?php else: ?>
-                                    <a href="<?= base_url('quiz/'.$asm['id'].'/start') ?>" class="btn btn-primary shadow-sm rounded-3">
-                                        <?= ($asm['status'] === 'STARTED') ? 'Continue' : 'Enter Assessment' ?>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+                    // $now and $asm are passed to the view
+                    echo view('quiz/partials/quiz_card', ['asm' => $asm, 'now' => time()]);
+                endforeach; ?>
             </div>
         <?php endif; ?>
 
@@ -348,31 +274,65 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('<?= base_url('quiz/get-updates') ?>')
             .then(res => res.json())
             .then(data => {
-                // If the count of items changed, we need to reload (new assignment or one finished)
-                if (data.length !== currentQuizzes.length) {
-                    location.reload();
-                    return;
-                }
+                // 3. Handle Additions (New Quizzes)
+                const newIdsArr = data.map(q => q.id);
+                const currentIdsArr = currentQuizzes.map(q => q.id);
                 
-                // If IDs don't match exactly, reload (assignment swapped)
-                const currentIds = currentQuizzes.map(q => q.id).sort().join(',');
-                const newIds = data.map(q => q.id).sort().join(',');
-                if (currentIds !== newIds) {
-                    location.reload();
-                    return;
-                }
+                const addedIds = newIdsArr.filter(id => !currentIdsArr.includes(id));
+                const removedIds = currentIdsArr.filter(id => !newIdsArr.includes(id));
+                
+                // Add new cards
+                addedIds.forEach(id => {
+                    fetch(`<?= base_url('quiz/get-card-html/') ?>/${id}`)
+                        .then(r => r.text())
+                        .then(html => {
+                            const wrapper = document.createElement('div');
+                            wrapper.innerHTML = html;
+                            const newCard = wrapper.firstElementChild;
+                            const container = document.querySelector('.row.g-4 .quiz-card-container')?.parentElement || document.querySelector('.col-lg-8 .row.g-4');
+                            if (container) container.appendChild(newCard);
+                            // If "No Quizzes" message exists, remove it
+                            const noQuizMsg = document.querySelector('.col-lg-8 .card.p-5');
+                            if (noQuizMsg) noQuizMsg.remove();
+                        });
+                });
 
-                // Update status in place without reload
+                // Remove old cards
+                removedIds.forEach(id => {
+                    const card = document.querySelector(`.quiz-card-container[data-quiz-id="${id}"]`);
+                    if (card) card.remove();
+                });
+
+                // Update existing cards (Status/Retest Changes)
                 data.forEach((newItem) => {
+                    if (addedIds.includes(newItem.id)) return; // Already handled
+
                     const cardContainer = document.querySelector(`.quiz-card-container[data-quiz-id="${newItem.id}"]`);
                     if (cardContainer) {
                         const card = cardContainer.querySelector('.card');
-                        // Update status attribute so the timer loop picks it up
-                        if (card.dataset.status !== newItem.status) {
-                            card.dataset.status = newItem.status;
+                        
+                        const oldRetestCount = parseInt(card.dataset.retestCount || 0);
+                        const oldRetestRejected = card.dataset.retestRejected === '1';
+                        const newRetestCount = parseInt(newItem.retest_count || 0);
+                        const newRetestRejected = !!newItem.retest_rejected;
+
+                        // Check for significant changes
+                        if (card.dataset.status !== newItem.status || 
+                            oldRetestCount !== newRetestCount || 
+                            oldRetestRejected !== newRetestRejected) {
+                                // Fetch new HTML and SWAP
+                                fetch(`<?= base_url('quiz/get-card-html/') ?>/${newItem.id}`)
+                                    .then(r => r.text())
+                                    .then(html => {
+                                        const wrapper = document.createElement('div');
+                                        wrapper.innerHTML = html;
+                                        cardContainer.replaceWith(wrapper.firstElementChild);
+                                    });
                         }
                     }
                 });
+                
+                currentQuizzes = data;
                 
                 currentQuizzes = data;
             })

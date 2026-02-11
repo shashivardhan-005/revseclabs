@@ -21,6 +21,18 @@ class AssignmentModel extends Model
     protected $createdField  = 'assigned_at';
     protected $updatedField  = '';
 
+    public function getAssignmentDetail($id, $userId)
+    {
+        return $this->select('quiz_assignments.*, quizzes.name as quiz_name, quizzes.total_questions, quizzes.duration_minutes, quizzes.start_time, quizzes.end_time, quizzes.pass_score, quizzes.results_released, quizzes.difficulty, GROUP_CONCAT(topics.name SEPARATOR ", ") as topic_display')
+                    ->join('quizzes', 'quizzes.id = quiz_assignments.quiz_id')
+                    ->join('quiz_topics', 'quiz_topics.quiz_id = quizzes.id', 'left')
+                    ->join('topics', 'topics.id = quiz_topics.topic_id', 'left')
+                    ->where('quiz_assignments.id', $id)
+                    ->where('quiz_assignments.user_id', $userId)
+                    ->groupBy('quiz_assignments.id')
+                    ->first();
+    }
+    
     public function getAssignmentsByUser($userId)
     {
         return $this->select('quiz_assignments.*, quizzes.name as quiz_name, quizzes.total_questions, quizzes.duration_minutes, quizzes.start_time, quizzes.end_time, quizzes.pass_score, quizzes.results_released, quizzes.difficulty, GROUP_CONCAT(topics.name SEPARATOR ", ") as topic_display')
