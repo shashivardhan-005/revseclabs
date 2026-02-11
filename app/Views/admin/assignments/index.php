@@ -6,7 +6,10 @@
 <div class="content-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="card-title mb-0">Quiz Assignments</h3>
-        <div class="actions">
+        <div class="actions d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center" onclick="downloadPDF()">
+                <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF
+            </button>
             <button type="button" class="btn btn-outline-danger d-flex align-items-center" id="bulkDeleteBtn" disabled>
                 <i class="bi bi-trash me-2"></i> Bulk Delete
             </button>
@@ -29,6 +32,7 @@
                 <option value="ASSIGNED" <?= $filters['status'] == 'ASSIGNED' ? 'selected' : '' ?>>Assigned</option>
                 <option value="STARTED" <?= $filters['status'] == 'STARTED' ? 'selected' : '' ?>>Started</option>
                 <option value="COMPLETED" <?= $filters['status'] == 'COMPLETED' ? 'selected' : '' ?>>Completed</option>
+                <option value="INCOMPLETE" <?= $filters['status'] == 'INCOMPLETE' ? 'selected' : '' ?>>Incomplete</option>
             </select>
         </div>
         <div class="col-md-2 d-flex align-items-center">
@@ -59,7 +63,7 @@
     <form id="bulkActionForm" method="post">
         <?= csrf_field() ?>
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle" id="assignmentsTable">
                 <thead class="table-light">
                     <tr>
                         <th style="width: 40px;">
@@ -87,7 +91,13 @@
                         <td><?= esc($row['email']) ?></td>
                         <td><?= esc($row['quiz_name']) ?></td>
                         <td>
-                            <span class="badge <?= $row['status'] == 'COMPLETED' ? 'bg-success' : ($row['status'] == 'STARTED' ? 'bg-primary' : 'bg-secondary') ?>">
+                            <?php
+                                $badgeClass = 'bg-secondary';
+                                if ($row['status'] == 'COMPLETED') $badgeClass = 'bg-success';
+                                elseif ($row['status'] == 'STARTED') $badgeClass = 'bg-primary';
+                                elseif ($row['status'] == 'INCOMPLETE') $badgeClass = 'bg-danger';
+                            ?>
+                            <span class="badge <?= $badgeClass ?>">
                                 <?= esc($row['status']) ?>
                             </span>
                         </td>
@@ -120,80 +130,82 @@
     </div>
 </div>
 
-<!-- Retest Management Modal -->
-<div class="modal fade" id="retestModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Manage Retest Request</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>User <strong><span id="retestUser"></span></strong> has requested a retest.</p>
-                <p class="text-muted small">Approving will reset the quiz progress and score, allowing the user to start fresh. Rejecting will remove the request flag but keep current progress.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="btnRejectRetest" onclick="submitRetestAction(this.dataset.url)">Reject Request</button>
-                <button type="button" class="btn btn-primary" id="btnApproveRetest" onclick="submitRetestAction(this.dataset.url)">Approve Retest</button>
-            </div>
-        </div>
-    </div>
-</div>
+<?= $this->endSection() ?>
+
+<?= $this->section('extra_js') ?>
+<!-- Dependencies for PDF Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const bulkActionForm = document.getElementById('bulkActionForm');
-    const selectAll = document.getElementById('selectAll');
-    const checkboxes = document.querySelectorAll('.assignment-checkbox');
-    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-
-    function updateButtons() {
-        const checkedCount = document.querySelectorAll('.assignment-checkbox:checked').length;
-        bulkDeleteBtn.disabled = checkedCount === 0;
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) {
+        alert('PDF library not loaded yet. Please try again in a moment.');
+        return;
     }
+    const doc = new jsPDF();
 
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            checkboxes.forEach(cb => cb.checked = selectAll.checked);
-            updateButtons();
-        });
-    }
-
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', updateButtons);
+    // Get table headers (excluding checkbox and actions)
+    const headers = [['User', 'Quiz', 'Status', 'Score', 'Assigned At']];
+    
+    // Get visible rows (respecting current filter)
+    const rows = [];
+    const tableRows = document.querySelectorAll('#assignmentsTable tbody tr');
+    
+    tableRows.forEach(tr => {
+        // Skip empty message row
+        if (tr.querySelector('td[colspan]')) return;
+        
+        const tds = tr.querySelectorAll('td');
+        // Indexes: 1=Email, 2=Quiz, 3=Status (text), 4=Score, 5=Date
+        if (tds.length >= 6) {
+            const rowData = [
+                tds[1].innerText.trim(),
+                tds[2].innerText.trim(),
+                tds[3].innerText.trim(),
+                tds[4].innerText.trim(),
+                tds[5].innerText.trim()
+            ];
+            rows.push(rowData);
+        }
     });
 
-    if (bulkDeleteBtn) {
-        bulkDeleteBtn.addEventListener('click', function() {
-            bulkActionForm.action = '<?= base_url('admin/assignments/bulk-delete') ?>';
-            confirmFormSubmit(bulkActionForm, 'Are you sure you want to delete the selected assignments?');
-        });
+    if (rows.length === 0) {
+        alert('No data available to export.');
+        return;
     }
-});
 
-function manageRetest(id, userName, approveUrl, rejectUrl) {
-    document.getElementById('retestUser').textContent = userName;
-    document.getElementById('btnApproveRetest').dataset.url = approveUrl;
-    document.getElementById('btnRejectRetest').dataset.url = rejectUrl;
+    // Header
+    doc.setFontSize(16);
+    doc.text("Assignments Report", 14, 15);
     
-    new bootstrap.Modal(document.getElementById('retestModal')).show();
-}
+    // Metadata
+    doc.setFontSize(10);
+    const now = new Date();
+    doc.text(`Generated on: ${now.toLocaleString()}`, 14, 22);
 
-function submitRetestAction(url) {
-    // Create a temporary form to submit properly via POST
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    
-    const csrf = document.createElement('input');
-    csrf.type = 'hidden';
-    csrf.name = '<?= csrf_token() ?>';
-    csrf.value = '<?= csrf_hash() ?>';
-    form.appendChild(csrf);
-    
-    document.body.appendChild(form);
-    form.submit();
+    // Filter Info (Optional context)
+    const statusFilter = document.querySelector('select[name="status"]').value;
+    const quizFilter = document.querySelector('select[name="quiz_id"] option:checked').text;
+    if (statusFilter || quizFilter !== "All Quizzes") {
+         let filterText = `Filters: ${quizFilter !== "All Quizzes" ? "Quiz: " + quizFilter : ""} ${statusFilter ? "- Status: " + statusFilter : ""}`;
+         doc.text(filterText, 14, 28);
+    }
+
+    doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 9, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+    });
+
+    // Timestamped filename
+    const dateStr = now.toISOString().slice(0,19).replace(/[:T]/g, '-');
+    doc.save(`Assignments_Report_${dateStr}.pdf`);
 }
 </script>
 <?= $this->endSection() ?>

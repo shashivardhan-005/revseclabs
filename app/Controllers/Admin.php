@@ -563,6 +563,23 @@ class Admin extends BaseController
     public function assignments()
     {
         $assignmentModel = new AssignmentModel();
+        $quizModel = new QuizModel();
+
+        // 1. Auto-mark expired assignments as INCOMPLETE
+        // Find all quizzes that have ended
+        $now = date('Y-m-d H:i:s');
+        $expiredQuizzes = $quizModel->where('end_time <', $now)->findAll();
+        
+        if (!empty($expiredQuizzes)) {
+            $expiredQuizIds = array_column($expiredQuizzes, 'id');
+            // Use query builder for direct update to bypass model events if necessary
+            // Update status where quiz is expired AND status is still ASSIGNED
+            $db = \Config\Database::connect();
+            $db->table('quiz_assignments')
+               ->whereIn('quiz_id', $expiredQuizIds)
+               ->where('status', 'ASSIGNED')
+               ->update(['status' => 'INCOMPLETE']);
+        }
         
         $status = $this->request->getGet('status');
         $quizId = $this->request->getGet('quiz_id');
