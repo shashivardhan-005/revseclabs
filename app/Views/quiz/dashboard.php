@@ -92,10 +92,23 @@
                 <p class="text-muted">You're all caught up! New quizzes will appear here when assigned.</p>
             </div>
         <?php else: ?>
-            <div class="row g-4">
+            <div class="row g-4" id="active-quizzes-list">
 
                 <?php foreach ($assigned_quizzes as $asm): 
                     // $now and $asm are passed to the view
+                    echo view('quiz/partials/quiz_card', ['asm' => $asm, 'now' => time()]);
+                endforeach; ?>
+            </div>
+
+        <?php endif; ?>
+
+        <?php if (!empty($incomplete_quizzes)): ?>
+            <h4 class="fw-bold mt-5 mb-4 d-flex align-items-center">
+                <i class="bi bi-exclamation-circle me-3 text-secondary"></i>
+                Incomplete Assessments
+            </h4>
+            <div class="row g-4" id="incomplete-quizzes-list">
+                <?php foreach ($incomplete_quizzes as $asm): 
                     echo view('quiz/partials/quiz_card', ['asm' => $asm, 'now' => time()]);
                 endforeach; ?>
             </div>
@@ -178,8 +191,9 @@
 <?= $this->section('extra_js') ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let currentQuizzes = <?= json_encode($assigned_quizzes) ?>;
+    let currentQuizzes = <?= json_encode(array_merge($assigned_quizzes, $incomplete_quizzes)) ?>;
     
+    // 1. Per-second Countdown for Upcoming Quizzes
     // 1. Per-second Countdown for Upcoming Quizzes
     function updateTimers() {
         const now = Math.floor(Date.now() / 1000);
@@ -189,80 +203,74 @@ document.addEventListener('DOMContentLoaded', function() {
             const status = card.dataset.status;
             const timerDisplay = card.querySelector('.timer-display-container div');
             const buttonContainer = card.querySelector('.d-grid');
-            const progressBar = card.querySelector('.timeline-progress');
-            const statusBadge = card.querySelector('.status-badge-floating');
-            const quizId = card.closest('.quiz-card-container').dataset.quizId;
-
-            // Update Progress Bar
-            if (progressBar) {
-                let progress = 0;
-                if (now >= start && now <= end) {
-                    progress = ((now - start) / (end - start)) * 100;
-                } else if (now > end) {
-                    progress = 100;
-                }
-                progressBar.style.width = `${progress}%`;
-            }
+            
+            // Base classes for the new pill badge design
+            const baseClasses = "d-flex align-items-center justify-content-center py-2 px-3 rounded-pill bg-opacity-10 fw-bold";
+            const fsStyle = "font-size: 0.9rem;";
 
             if (now >= start && now <= end && status === 'ASSIGNED') {
-                // ... Swap logic ...
                 const startUrl = card.dataset.startUrl;
                 if (buttonContainer && !buttonContainer.querySelector('a')) {
-                    buttonContainer.innerHTML = `<a href="${startUrl}" class="btn btn-primary shadow-sm rounded-3">Enter Assessment</a>`;
+                    buttonContainer.innerHTML = `<a href="${startUrl}" class="btn btn-primary fw-bold py-3 shadow-sm rounded-3 hover-scale d-flex align-items-center justify-content-center" style="background: linear-gradient(90deg, #0d6efd 0%, #0a58ca 100%); border: none;"><span>Enter Assessment</span><i class="bi bi-arrow-right ms-2"></i></a>`;
                     card.dataset.status = 'STARTED_LOCALLY';
-                    if (statusBadge) {
-                        statusBadge.className = 'status-badge-floating bg-success text-white fw-bold';
-                        const stText = document.getElementById(`status-text-${quizId}`);
-                        if (stText) stText.innerText = 'Active';
-                    }
                 }
                 
                 if (timerDisplay) {
                     const diff = end - now;
                     const mins = Math.floor(diff / 60);
                     const secs = diff % 60;
-                    timerDisplay.innerHTML = `<i class="bi bi-unlock-fill me-2"></i> Active: Ends in ${mins}:${secs.toString().padStart(2, '0')}`;
-                    timerDisplay.className = "d-flex align-items-center text-success small fw-bold";
+                    timerDisplay.innerHTML = `<i class="bi bi-unlock-fill me-2 fs-5"></i> <span class="fw-bold">Active: Ends in ${mins}:${secs.toString().padStart(2, '0')}</span>`;
+                    timerDisplay.className = `${baseClasses} bg-success text-success`;
+                    timerDisplay.style = fsStyle;
                 }
             } else if (now >= start && now <= end && (status === 'STARTED' || status === 'STARTED_LOCALLY')) {
                 const diff = end - now;
                 const mins = Math.floor(diff / 60);
                 const secs = diff % 60;
                 if (timerDisplay) {
-                    timerDisplay.innerHTML = `<i class="bi bi-hourglass-split me-2"></i> Ends in: ${mins}:${secs.toString().padStart(2, '0')}`;
-                    timerDisplay.className = "d-flex align-items-center text-success small fw-bold";
-                }
-                if (statusBadge && !statusBadge.classList.contains('bg-success')) {
-                    statusBadge.className = 'status-badge-floating bg-success text-white fw-bold';
-                    const stText = document.getElementById(`status-text-${quizId}`);
-                    if (stText) stText.innerText = 'Active';
+                    timerDisplay.innerHTML = `<i class="bi bi-hourglass-split me-2 fs-5"></i> <span class="fw-bold">Ends in: ${mins}:${secs.toString().padStart(2, '0')}</span>`;
+                    timerDisplay.className = `${baseClasses} bg-success text-success`;
+                    timerDisplay.style = fsStyle;
                 }
             } else if (now > end) {
                 const container = card.closest('.quiz-card-container');
-                if (container && container.style.opacity !== '0.5') {
-                    container.style.opacity = '0.5';
-                    container.style.pointerEvents = 'none';
+                // Check if retest logic allows access despite expiry
+                const hasRetest = (parseInt(card.dataset.retestCount || 0) >= 1);
+
+                if (!hasRetest) {
+                    if (container && container.style.opacity !== '0.6') { 
+                        container.style.opacity = '0.6';
+                        container.style.pointerEvents = 'none'; 
+                    }
                     if (timerDisplay) {
-                        timerDisplay.innerHTML = `<i class="bi bi-x-circle me-2"></i> Expired`;
-                        timerDisplay.className = "d-flex align-items-center text-danger small fw-bold";
+                        timerDisplay.innerHTML = `<i class="bi bi-x-circle me-2 fs-5"></i> <span class="fw-bold">Expired</span>`;
+                        timerDisplay.className = `${baseClasses} bg-secondary text-secondary`;
+                        timerDisplay.style = fsStyle;
                     }
                     if (buttonContainer) {
-                        buttonContainer.innerHTML = `<button class="btn btn-secondary disabled rounded-3">Expired</button>`;
+                         // Only replace if it's not already showing "Expired" or "Closed"
+                         if (!buttonContainer.innerHTML.includes('Locked') && !buttonContainer.innerHTML.includes('Closed')) {
+                             buttonContainer.innerHTML = `<button class="btn btn-light disabled text-muted fw-bold py-3 rounded-3 border-0" style="background: #e9ecef;">Assessment Closed</button>`;
+                         }
                     }
-                    if (statusBadge) {
-                        statusBadge.className = 'status-badge-floating bg-secondary text-white fw-bold';
-                        const stText = document.getElementById(`status-text-${quizId}`);
-                        if (stText) stText.innerText = 'Closed';
-                    }
+                } else {
+                     // Has retest: Ensure it's active looking
+                     if (timerDisplay) {
+                        timerDisplay.innerHTML = `<i class="bi bi-exclamation-circle me-2 fs-5"></i> <span class="fw-bold">Expired (Retest Available)</span>`;
+                        timerDisplay.className = `${baseClasses} bg-warning text-warning`;
+                        timerDisplay.style = fsStyle;
+                     }
                 }
+
             } else if (now < start) {
                 const diff = start - now;
                 if (diff < 3600) {
                     const mins = Math.floor(diff / 60);
                     const secs = diff % 60;
                     if (timerDisplay) {
-                        timerDisplay.innerHTML = `<i class="bi bi-clock-history me-2"></i> Starts in: ${mins}:${secs.toString().padStart(2, '0')}`;
-                        timerDisplay.className = "d-flex align-items-center text-warning small fw-bold";
+                        timerDisplay.innerHTML = `<i class="bi bi-clock-history me-2 fs-5"></i> <span class="fw-bold">Starts in: ${mins}:${secs.toString().padStart(2, '0')}</span>`;
+                        timerDisplay.className = `${baseClasses} bg-warning text-warning`;
+                        timerDisplay.style = fsStyle;
                     }
                 }
             }
@@ -289,8 +297,26 @@ document.addEventListener('DOMContentLoaded', function() {
                             const wrapper = document.createElement('div');
                             wrapper.innerHTML = html;
                             const newCard = wrapper.firstElementChild;
-                            const container = document.querySelector('.row.g-4 .quiz-card-container')?.parentElement || document.querySelector('.col-lg-8 .row.g-4');
-                            if (container) container.appendChild(newCard);
+                            
+                            // Determine where to put it
+                            const itemData = data.find(q => q.id === id);
+                            const category = itemData.category || 'active'; // Default to active if missing
+                            
+                            let container;
+                            if (category === 'incomplete') {
+                                container = document.getElementById('incomplete-quizzes-list');
+                            } else {
+                                container = document.getElementById('active-quizzes-list');
+                            }
+
+                            // If container is missing (e.g. empty state "No Quizzes" means active-list is missing), reload to fix structure
+                            if (!container) {
+                                location.reload();
+                                return;
+                            }
+                            
+                            container.appendChild(newCard);
+                            
                             // If "No Quizzes" message exists, remove it
                             const noQuizMsg = document.querySelector('.col-lg-8 .card.p-5');
                             if (noQuizMsg) noQuizMsg.remove();
@@ -310,16 +336,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     const cardContainer = document.querySelector(`.quiz-card-container[data-quiz-id="${newItem.id}"]`);
                     if (cardContainer) {
                         const card = cardContainer.querySelector('.card');
+                        const parentListId = cardContainer.parentElement.id;
                         
+                        // Check if it's in the correct section
+                        const newItemCategory = newItem.category || 'active';
+                        const expectedParentId = (newItemCategory === 'incomplete') ? 'incomplete-quizzes-list' : 'active-quizzes-list';
+                        
+                        if (parentListId !== expectedParentId) {
+                            // Moved between Active <-> Incomplete
+                            location.reload();
+                            return;
+                        }
+
                         const oldRetestCount = parseInt(card.dataset.retestCount || 0);
                         const oldRetestRejected = card.dataset.retestRejected === '1';
                         const newRetestCount = parseInt(newItem.retest_count || 0);
-                        const newRetestRejected = !!newItem.retest_rejected;
+                        // Fix: explicitly check for truthy value that isn't "0" string
+                        const newRetestRejected = (newItem.retest_rejected == 1 || newItem.retest_rejected === '1' || newItem.retest_rejected === true);
 
                         // Check for significant changes
-                        if (card.dataset.status !== newItem.status || 
-                            oldRetestCount !== newRetestCount || 
-                            oldRetestRejected !== newRetestRejected) {
+                        // Ignore if local is STARTED_LOCALLY and remote is ASSIGNED
+                        const statusChanged = card.dataset.status !== newItem.status && 
+                                            !(card.dataset.status === 'STARTED_LOCALLY' && newItem.status === 'ASSIGNED');
+
+                        let shouldUpdate = false;
+                        
+                        // Strict update rules for Incomplete section
+                        if (parentListId === 'incomplete-quizzes-list') {
+                            // Only update incomplete quizzes if Retest Status changes
+                            if (oldRetestCount !== newRetestCount || oldRetestRejected !== newRetestRejected) {
+                                shouldUpdate = true;
+                                // If retest is granted, reload to move to Active list
+                                if (newRetestCount > oldRetestCount) {
+                                    location.reload();
+                                    return;
+                                }
+                            }
+                        } else {
+                             // Active section standard rules
+                             if (statusChanged || oldRetestCount !== newRetestCount || oldRetestRejected !== newRetestRejected) {
+                                 shouldUpdate = true;
+                             }
+                        }
+
+                        if (shouldUpdate) {
                                 // Fetch new HTML and SWAP
                                 fetch(`<?= base_url('quiz/get-card-html/') ?>/${newItem.id}`)
                                     .then(r => r.text())

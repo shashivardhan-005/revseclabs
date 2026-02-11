@@ -33,13 +33,25 @@ class Quiz extends BaseController
         $progress_stats = [];
 
         // 1. Organize Quizzes into Categories (Assigned vs Released Results)
+        $incomplete_quizzes = [];
+
+        // 1. Organize Quizzes into Categories (Assigned, Incomplete, Completed)
         foreach ($assignments as $asm) {
             $isReleased = ($now >= $asm['end_time'] || (bool)$asm['results_released']);
-            
+            $isExpired = ($now >= $asm['end_time']);
+            $retestGranted = (($asm['retest_count'] ?? 0) >= 1);
+
             if ($asm['status'] === 'COMPLETED' && $isReleased) {
+                // Completed & Released -> Results Section
                 $completed_quizzes[] = $asm;
+            } else if ($asm['status'] !== 'COMPLETED' && $isExpired && !$retestGranted) {
+                // Not Completed AND Expired AND No Retest -> Incomplete Section
+                $incomplete_quizzes[] = $asm;
             } else if ($asm['status'] !== 'COMPLETED' || !$isReleased) {
-                // Keep in assigned if it's not completed OR if it is completed but results are NOT released yet
+                // (Not Completed AND Not Expired) OR (Completed but Not Released) -> Active Section
+                // Note: Retests on expired quizzes fall here because !$isExpired check fails but we treat them as active? 
+                // Wait, logic above: if Expired & No Retest -> Incomplete.
+                // Else (Expired & Retest) -> Falls through to here? Yes.
                 $assigned_quizzes[] = $asm;
             }
         }
@@ -89,6 +101,7 @@ class Quiz extends BaseController
 
         return view('quiz/dashboard', [
             'assigned_quizzes' => $assigned_quizzes,
+            'incomplete_quizzes' => $incomplete_quizzes,
             'completed_quizzes' => $completed_quizzes,
             'progress_stats' => $progress_stats
         ]);
@@ -571,6 +584,15 @@ class Quiz extends BaseController
             // Logic must match dashboard(): Include if NOT (Taken AND Released)
             // i.e. Include if (Not Taken) OR (Taken but Not Released)
             if ($asm['status'] !== 'COMPLETED' || !$isReleased) {
+                // Determine Category
+                $isExpired = ($now >= $endTime);
+                $retestGranted = (($asm['retest_count'] ?? 0) >= 1);
+                
+                $category = 'active';
+                if ($asm['status'] !== 'COMPLETED' && $isExpired && !$retestGranted) {
+                    $category = 'incomplete';
+                }
+
                 $data[] = [
                     'id' => $asm['id'],
                     'quiz_name' => $asm['quiz_name'],
@@ -582,7 +604,8 @@ class Quiz extends BaseController
                     'retest_count' => $asm['retest_count'],
                     'retest_rejected' => $asm['retest_rejected'],
                     'start_timestamp' => strtotime($asm['start_time']),
-                    'end_timestamp' => $endTime
+                    'end_timestamp' => $endTime,
+                    'category' => $category // ADDED: Use this for placement in JS
                 ];
             }
         }
