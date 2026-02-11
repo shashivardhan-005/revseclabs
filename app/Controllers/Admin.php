@@ -898,6 +898,20 @@ class Admin extends BaseController
             
             if (!empty($userData)) {
                 $userModel->update($request['user_id'], $userData);
+                
+                // Update session if the user is currently logged in
+                if (session()->get('id') == $request['user_id']) {
+                    $sessionData = [];
+                    if (isset($userData['first_name'])) {
+                        $sessionData['first_name'] = $userData['first_name'];
+                    }
+                    if (isset($userData['last_name'])) {
+                        $sessionData['last_name'] = $userData['last_name'];
+                    }
+                    if (!empty($sessionData)) {
+                        session()->set($sessionData);
+                    }
+                }
             }
             
             // Mark Request Approved
