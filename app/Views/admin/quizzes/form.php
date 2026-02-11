@@ -55,24 +55,70 @@
                     <div class="card-body">
                         <h5 class="mb-3">Quiz Settings</h5>
                         <div class="mb-3">
-                            <label class="form-label">Topic</label>
-                            <select name="topic_id" class="form-select">
-                                <?php foreach ($topics as $topic): ?>
-                                    <option value="<?= $topic['id'] ?>" <?= ($quiz && isset($quiz['topic_id']) && $quiz['topic_id'] == $topic['id']) ? 'selected' : '' ?>><?= $topic['name'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="form-label d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Assessment Topics</span>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <small><a href="javascript:void(0)" id="selectAllTopics" class="text-decoration-none">Select All</a></small>
+                                    <span class="text-muted">|</span>
+                                    <span class="badge bg-primary rounded-pill small" id="topicCount">0 selected</span>
+                                </div>
+                            </label>
+                            
+                            <!-- Search Field -->
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="topicSearch" class="form-control border-start-0 bg-light" placeholder="Search topics...">
+                            </div>
+
+                            <div class="topic-grid-container border rounded bg-light p-2" style="max-height: 250px; overflow-y: auto;">
+                                <div class="row g-2" id="topicGrid">
+                                    <?php foreach ($topics as $topic): ?>
+                                        <div class="col-12 topic-item">
+                                            <div class="form-check p-2 rounded hover-bg-white border-bottom border-light-subtle">
+                                                <input class="form-check-input ms-0 me-2 topic-checkbox" type="checkbox" 
+                                                       name="topic_ids[]" value="<?= $topic['id'] ?>" 
+                                                       id="topic_<?= $topic['id'] ?>"
+                                                       <?= (in_array($topic['id'], $selectedTopicIds)) ? 'checked' : '' ?>>
+                                                <label class="form-check-label d-block cursor-pointer" for="topic_<?= $topic['id'] ?>">
+                                                    <?= esc($topic['name']) ?>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <div class="form-text small text-muted mt-1">Select one or more topics to include in this quiz.</div>
                         </div>
+
+                        <style>
+                            .hover-bg-white:hover { background-color: white !important; }
+                            .cursor-pointer { cursor: pointer; }
+                            .topic-grid-container::-webkit-scrollbar { width: 6px; }
+                            .topic-grid-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+                        </style>
                         <div class="mb-3">
                             <label class="form-label">Passing Score (%)</label>
                             <input type="number" name="pass_score" class="form-control" value="<?= $quiz ? esc($quiz['pass_score']) : get_setting('default_passing_score', 70) ?>" min="0" max="100" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Difficulty</label>
-                            <select name="difficulty" class="form-select">
-                                <option value="EASY" <?= ($quiz && isset($quiz['difficulty']) && $quiz['difficulty'] == 'EASY') ? 'selected' : '' ?>>Easy</option>
-                                <option value="MEDIUM" <?= (!$quiz || (isset($quiz['difficulty']) && $quiz['difficulty'] == 'MEDIUM')) ? 'selected' : '' ?>>Medium</option>
-                                <option value="HARD" <?= ($quiz && isset($quiz['difficulty']) && $quiz['difficulty'] == 'HARD') ? 'selected' : '' ?>>Hard</option>
-                            </select>
+                            <label class="form-label d-block fw-bold">Difficulty Levels</label>
+                            <?php 
+                                $currentDifficulty = $quiz ? explode(',', $quiz['difficulty']) : ['MEDIUM'];
+                            ?>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="difficulty[]" value="EASY" id="diff_easy" <?= in_array('EASY', $currentDifficulty) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="diff_easy">Easy</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="difficulty[]" value="MEDIUM" id="diff_medium" <?= in_array('MEDIUM', $currentDifficulty) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="diff_medium">Medium</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="difficulty[]" value="HARD" id="diff_hard" <?= in_array('HARD', $currentDifficulty) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="diff_hard">Hard</label>
+                                </div>
+                            </div>
                         </div>
                         <hr>
                         <div class="form-check form-switch mb-2">
@@ -117,6 +163,45 @@
         dateFormat: "Y-m-d H:i:S",
         time_24hr: <?= ($timeFormat === '24h') ? 'true' : 'false' ?>,
         allowInput: true
+    });
+
+    // Topic Grid JS
+    const topicCheckboxes = document.querySelectorAll('.topic-checkbox');
+    const topicCountBadge = document.getElementById('topicCount');
+    const topicSearch = document.getElementById('topicSearch');
+    const selectAllBtn = document.getElementById('selectAllTopics');
+
+    function updateCount() {
+        const checkedCount = document.querySelectorAll('.topic-checkbox:checked').length;
+        topicCountBadge.innerText = `${checkedCount} selected`;
+    }
+
+    topicCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateCount);
+    });
+
+    // Initial count
+    updateCount();
+
+    // Select All Toggle
+    selectAllBtn?.addEventListener('click', function() {
+        const anyUnchecked = Array.from(topicCheckboxes).some(cb => !cb.checked);
+        topicCheckboxes.forEach(cb => {
+            // Only affect visible items during search, or all if no search?
+            // Usually, users expect select all to affect everything visible
+            cb.checked = anyUnchecked;
+        });
+        this.innerText = anyUnchecked ? 'Deselect All' : 'Select All';
+        updateCount();
+    });
+
+    // Search Logic
+    topicSearch?.addEventListener('input', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.topic-item').forEach(item => {
+            const name = item.innerText.toLowerCase();
+            item.style.display = name.includes(term) ? 'block' : 'none';
+        });
     });
 </script>
 <?= $this->endSection() ?>

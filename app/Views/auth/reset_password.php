@@ -3,34 +3,60 @@
 <?= $this->section('title') ?>Reset Password<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<div class="auth-card">
-    <div class="text-center mb-4">
-        <h2 class="fw-bold">Reset Password</h2>
-        <p class="text-muted">Please enter your new password below.</p>
+<div class="row justify-content-center align-items-center min-vh-100 pb-5">
+    <div class="col-lg-5 col-md-8">
+        <div class="card bg-white rounded-5 shadow-lg border-0 overflow-hidden" style="border-radius: 2rem !important;">
+            <div class="card-body p-0">
+                <!-- Header with vibrant blue -->
+                <div class="py-3 px-5 text-center bg-primary">
+                    <h5 class="mb-0 fw-bold text-white d-flex align-items-center justify-content-center">
+                        <i class="bi bi-shield-lock-fill me-2 h4 mb-0"></i> RESET PASSWORD
+                    </h5>
+                </div>
+                
+                <div class="p-5 pt-5">
+                    <div class="text-center mb-5">
+                        <h1 class="fw-bold text-dark display-6 mb-3">Reset Password</h1>
+                        <p class="text-muted">Please enter your new secure password below.</p>
+                    </div>
+
+                    <?php if (session()->getFlashdata('error')): ?>
+                        <div class="alert alert-danger alert-dismissible fade show border-0 bg-danger bg-opacity-10 text-danger mb-4 rounded-4" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i><?= session()->getFlashdata('error') ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
+
+                    <form action="<?= base_url('reset-password/update') ?>" method="post">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="token" value="<?= esc($token) ?>">
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark mb-3">New Password</label>
+                            <div class="position-relative">
+                                <input type="password" name="new_password" class="form-control form-control-lg border-0 bg-light rounded-3 py-3" required minlength="8" placeholder="Minimum 8 characters" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                                <div class="position-absolute end-0 top-50 translate-middle-y me-3">
+                                    <div class="bg-white rounded-circle p-1 shadow-sm border">
+                                        <i class="bi bi-key-fill text-dark small"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-5">
+                            <label class="form-label fw-bold text-dark mb-3">Confirm New Password</label>
+                            <input type="password" name="confirm_password" class="form-control form-control-lg border-0 bg-light rounded-3 py-3" required minlength="8" placeholder="Repeat new password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold rounded-4 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                Reset Password <i class="bi bi-arrow-right-circle h5 mb-0"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= session()->getFlashdata('error') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <form action="<?= base_url('reset-password/update') ?>" method="post">
-        <?= csrf_field() ?>
-        <input type="hidden" name="token" value="<?= esc($token) ?>">
-        
-        <div class="mb-3">
-            <label class="form-label">New Password</label>
-            <input type="password" name="new_password" class="form-control" required placeholder="Minimum 8 characters">
-        </div>
-        
-        <div class="mb-4">
-            <label class="form-label">Confirm New Password</label>
-            <input type="password" name="confirm_password" class="form-control" required placeholder="Repeat new password">
-        </div>
-
-        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Reset Password</button>
-    </form>
 </div>
 <?= $this->endSection() ?>

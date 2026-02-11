@@ -48,8 +48,7 @@
             <i class="bi bi-shield-lock-fill display-1 text-primary"></i>
         </div>
         <h2>Ready to Begin?</h2>
-        <p>This quiz requires <strong>Full-Screen Mode</strong>. Once you click the button below, the timer will start
-            and you must remain in full-screen until completion.</p>
+        <p>This quiz <?= $quiz['force_full_screen'] ? 'requires <strong>Full-Screen Mode</strong>. Once you click the button below, the timer will start and you must remain in full-screen until completion.' : 'will begin once you click the button below. The timer will start immediately.' ?></p>
         <button class="btn btn-primary btn-lg px-5" onclick="startQuiz()">Begin Quiz Now</button>
     </div>
 </div>
@@ -237,14 +236,18 @@
             container.style.opacity = '1';
         }, 10);
 
+        <?php if ($quiz['force_full_screen']): ?>
         requestFullScreen();
+        <?php endif; ?>
 
         // Start Timer
         updateTimer();
         timerInterval = setInterval(updateTimer, 1000);
 
         // Enable anti-cheat check
+        <?php if ($quiz['force_full_screen']): ?>
         checkFullScreen();
+        <?php endif; ?>
     }
 
     // Timer Logic
@@ -339,7 +342,16 @@
         logViolation(type);
 
         if (violationCount >= violationLimit) {
+            <?php if ($quiz['auto_submit_on_violation']): ?>
             submitQuiz('Cheating Violation Limit Reached (' + violationCount + '/' + violationLimit + ')');
+            <?php else: ?>
+            // Just warn if auto-submit is disabled
+            document.getElementById('violationCountDisplay').innerText = violationCount;
+            document.getElementById('violationTitle').innerText = (type === 'TAB_SWITCH') ? 'Tab Switch Detected' : 'Full Screen Exit Detected';
+            document.getElementById('fullscreen-overlay').style.display = 'none';
+            const violationModal = new bootstrap.Modal(document.getElementById('violationModal'));
+            violationModal.show();
+            <?php endif; ?>
         } else {
             // Show Violation Modal
             document.getElementById('violationCountDisplay').innerText = violationCount;
@@ -367,15 +379,20 @@
         }
     };
 
+    <?php if ($quiz['force_full_screen']): ?>
     document.addEventListener('fullscreenchange', fullScreenListener);
     document.addEventListener('webkitfullscreenchange', fullScreenListener);
     document.addEventListener('mozfullscreenchange', fullScreenListener);
     document.addEventListener('MSFullscreenChange', fullScreenListener);
+    <?php endif; ?>
 
     const blurListener = function () {
         handleViolation('TAB_SWITCH');
     };
+    
+    <?php if ($quiz['detect_tab_switch']): ?>
     window.addEventListener('blur', blurListener);
+    <?php endif; ?>
 
 </script>
 <?= $this->endSection() ?>

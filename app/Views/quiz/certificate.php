@@ -324,7 +324,7 @@
             const element = document.getElementById('certificate-to-print');
             const opt = {
                 margin:       0,
-                filename:     '<?= esc($user['first_name']) ?>_<?= esc($user['last_name']) ?>_<?= str_replace(' ', '_', esc($quiz['name'])) ?>.pdf',
+                filename:     'Certificate_<?= esc($user['first_name']) ?>_<?= str_replace(' ', '_', esc($quiz['name'])) ?>.pdf',
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { 
                     scale: 4, 

@@ -22,11 +22,16 @@ class SendQuizEmails extends BaseCommand
         $userModel = new UserModel();
         $emailLib = new EmailLibrary();
 
-        // Get quizzes where results are released
-        $quizzes = $quizModel->where('results_released', true)->findAll();
+        // Get quizzes that have ended OR are manually released
+        $now = date('Y-m-d H:i:s');
+        $quizzes = $quizModel->groupStart()
+                                ->where('end_time <=', $now)
+                                ->orWhere('results_released', true)
+                             ->groupEnd()
+                             ->findAll();
 
         if (empty($quizzes)) {
-            CLI::write('No quizzes found with released results.', 'yellow');
+            CLI::write('No quizzes found that need result processing.', 'yellow');
             return;
         }
 
@@ -73,16 +78,21 @@ class SendQuizEmails extends BaseCommand
                     }
                 }
 
-                $sent = $emailLib->send($user['email'], 'Quiz Results: ' . $quiz['name'], 'quiz_results', [
-                    'first_name' => $user['first_name'],
-                    'quiz_name' => $quiz['name'],
-                    'score' => $assignment['score'],
-                    'status' => $assignment['status'],
-                    'results' => $resultsData
-                ]);
+                // Check for certificate
+                $certificateUrl = null;
+                $passThreshold = (int)($quiz['pass_score'] ?: 70);
+                if (round((float)$assignment['score'], 2) >= $passThreshold) {
+                    $certificateUrl = base_url('quiz/certificate/' . $assignment['id']);
+                }
+
+                $sent = $emailLib->sendQuizResults($user, $quiz, $assignment, $resultsData, $certificateUrl);
 
                 if ($sent) {
-                    $assignmentModel->update($assignment['id'], ['result_email_sent' => true]);
+                    $updateData = ['result_email_sent' => true];
+                    if ($certificateUrl) {
+                        $updateData['certificate_sent'] = true;
+                    }
+                    $assignmentModel->update($assignment['id'], $updateData);
                     CLI::write('Success', 'green');
                 } else {
                     CLI::write('Failed', 'red');

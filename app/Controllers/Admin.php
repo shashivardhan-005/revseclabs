@@ -13,6 +13,7 @@ use App\Models\OptionModel;
 use App\Models\ProfileChangeRequestModel;
 use App\Models\SettingModel;
 use App\Models\ResponseModel;
+use App\Models\QuizTopicModel;
 use App\Libraries\EmailLibrary;
 use CodeIgniter\Controller;
 
@@ -480,7 +481,8 @@ class Admin extends BaseController
         $topicModel = new TopicModel();
         return view('admin/quizzes/form', [
             'quiz' => null,
-            'topics' => $topicModel->findAll()
+            'topics' => $topicModel->findAll(),
+            'selectedTopicIds' => []
         ]);
     }
 
@@ -488,36 +490,57 @@ class Admin extends BaseController
     {
         $quizModel = new QuizModel();
         $topicModel = new TopicModel();
+        $quizTopicModel = new QuizTopicModel();
+        
         $quiz = $quizModel->find($id);
         if (!$quiz) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
 
+        $selectedTopics = $quizTopicModel->where('quiz_id', $id)->findAll();
+        $selectedTopicIds = array_column($selectedTopics, 'topic_id');
+
         return view('admin/quizzes/form', [
             'quiz' => $quiz,
-            'topics' => $topicModel->findAll()
+            'topics' => $topicModel->findAll(),
+            'selectedTopicIds' => $selectedTopicIds
         ]);
     }
 
     public function saveQuiz()
     {
         $quizModel = new QuizModel();
+        $quizTopicModel = new QuizTopicModel();
         $data = $this->request->getPost();
         
-        // Basic checkboxes manually handled as CodeIgniter doesn't post unchecked boxes
-        $data['force_full_screen'] = isset($data['force_full_screen']);
-        $data['detect_tab_switch'] = isset($data['detect_tab_switch']);
-        $data['disable_copy_paste'] = isset($data['disable_copy_paste']);
-        $data['auto_submit_on_violation'] = isset($data['auto_submit_on_violation']);
-        $data['results_released'] = isset($data['results_released']);
+        $topicIds = $data['topic_ids'] ?? [];
+        unset($data['topic_ids']);
+
+        // Handle multi-difficulty selection
+        $difficulties = $data['difficulty'] ?? ['MEDIUM'];
+        $data['difficulty'] = is_array($difficulties) ? implode(',', $difficulties) : $difficulties;
+
+        // Ensure checkboxes are handled correctly (CodeIgniter request->getPost() might not include unchecked boxes)
+        $data['force_full_screen'] = isset($data['force_full_screen']) ? 1 : 0;
+        $data['detect_tab_switch'] = isset($data['detect_tab_switch']) ? 1 : 0;
+        $data['disable_copy_paste'] = isset($data['disable_copy_paste']) ? 1 : 0;
+        $data['auto_submit_on_violation'] = isset($data['auto_submit_on_violation']) ? 1 : 0;
+        $data['results_released'] = isset($data['results_released']) ? 1 : 0;
+        
+        // Violation limit
+        $data['violation_limit'] = isset($data['violation_limit']) ? (int)$data['violation_limit'] : 3;
 
         if (isset($data['id']) && !empty($data['id'])) {
             $quizModel->update($data['id'], $data);
+            $quizId = $data['id'];
             $action = 'UPDATE_QUIZ';
             $details = "Updated quiz '{$data['name']}' (#{$data['id']})";
         } else {
-            $id = $quizModel->insert($data);
+            $quizId = $quizModel->insert($data);
             $action = 'CREATE_QUIZ';
-            $details = "Created new quiz '{$data['name']}' (#$id)";
+            $details = "Created new quiz '{$data['name']}' (#$quizId)";
         }
+
+        // Sync Topics
+        $quizTopicModel->syncTopics($quizId, $topicIds);
 
         $auditModel = new \App\Models\AuditModel();
         $auditModel->insert([
@@ -731,6 +754,31 @@ class Admin extends BaseController
         $questionModel = new QuestionModel();
         $questionModel->delete($id);
         return redirect()->to('/admin/questions')->with('success', 'Question deleted successfully.');
+    }
+
+    public function bulkDeleteQuestions()
+    {
+        $ids = $this->request->getPost('question_ids');
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'Please select questions to delete.');
+        }
+
+        $questionModel = new QuestionModel();
+        $deleted = 0;
+        
+        foreach ($ids as $id) {
+            $questionModel->delete($id);
+            $deleted++;
+
+            $auditModel = new AuditModel();
+            $auditModel->insert([
+                'user_id' => session()->get('id'),
+                'action' => 'DELETE_QUESTION',
+                'details' => "Deleted question ID: $id"
+            ]);
+        }
+
+        return redirect()->to('/admin/questions')->with('success', "$deleted questions deleted successfully.");
     }
 
     // --- Topic Management ---

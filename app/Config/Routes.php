@@ -63,6 +63,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers'], static function ($ro
     $routes->get('questions/edit/(:num)', 'Admin::editQuestion/$1');
     $routes->post('questions/save', 'Admin::saveQuestion');
     $routes->get('questions/delete/(:num)', 'Admin::deleteQuestion/$1');
+    $routes->post('questions/bulk-delete', 'Admin::bulkDeleteQuestions');
     
     // Topic Management
     $routes->get('topics', 'Admin::topics');

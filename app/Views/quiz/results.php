@@ -38,21 +38,35 @@
                         <div class="row g-3">
                             <?php
                             $correct = 0; $total = count($results);
-                            foreach($results as $r) if($r['is_correct']) $correct++;
+                            $totalWeight = 0; $earnedWeight = 0;
+                            foreach($results as $r) {
+                                $weight = ($r['question']['difficulty'] === 'HARD') ? 3 : (($r['question']['difficulty'] === 'MEDIUM') ? 2 : 1);
+                                $totalWeight += $weight;
+                                if($r['is_correct']) {
+                                    $correct++;
+                                    $earnedWeight += $weight;
+                                }
+                            }
                             ?>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                 <div class="p-3 bg-light rounded-4 text-center">
                                     <h6 class="text-muted small fw-bold mb-1">Total Questions</h6>
                                     <div class="h4 fw-bold mb-0"><?= $total ?></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                 <div class="p-3 bg-success-subtle rounded-4 text-center">
                                     <h6 class="text-success small fw-bold mb-1">Correct</h6>
                                     <div class="h4 fw-bold text-success mb-0"><?= $correct ?></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
+                                <div class="p-3 bg-primary-subtle rounded-4 text-center">
+                                    <h6 class="text-primary small fw-bold mb-1">Points Earned</h6>
+                                    <div class="h4 fw-bold text-primary mb-0"><?= $earnedWeight ?> / <?= $totalWeight ?></div>
+                                </div>
+                            </div>
+                            <div class="col-sm-3">
                                 <div class="p-3 bg-danger-subtle rounded-4 text-center">
                                     <h6 class="text-danger small fw-bold mb-1">Incorrect</h6>
                                     <div class="h4 fw-bold text-danger mb-0"><?= $total - $correct ?></div>
@@ -74,9 +88,20 @@
             <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden result-item-card <?= $res['is_correct'] ? 'border-start border-4 border-success' : 'border-start border-4 border-danger' ?>">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="fw-bold text-dark d-flex gap-3">
-                            <span class="text-primary">Q<?= $index + 1 ?>.</span>
-                            <?= esc($res['question']['text']) ?>
+                        <h6 class="fw-bold text-dark d-flex gap-3 align-items-start">
+                            <span class="text-primary mt-1">Q<?= $index + 1 ?>.</span>
+                            <div>
+                                <div class="mb-2">
+                                    <?php 
+                                        $dif = $res['question']['difficulty'];
+                                        $weight = ($dif === 'HARD') ? 3 : (($dif === 'MEDIUM') ? 2 : 1);
+                                        $badgeClass = ($dif === 'HARD') ? 'bg-danger' : (($dif === 'MEDIUM') ? 'bg-warning text-dark' : 'bg-success');
+                                    ?>
+                                    <span class="badge <?= $badgeClass ?> rounded-pill small me-2" style="font-size: 0.7rem;"><?= $dif ?></span>
+                                    <span class="badge bg-light text-dark border rounded-pill small" style="font-size: 0.7rem;"><?= $weight ?> <?= $weight > 1 ? 'POINTS' : 'POINT' ?></span>
+                                </div>
+                                <?= esc($res['question']['text']) ?>
+                            </div>
                         </h6>
                         <span class="ms-3">
                             <?php if ($res['is_correct']): ?>
@@ -163,11 +188,12 @@
     document.getElementById('download-pdf').addEventListener('click', function () {
         const element = document.getElementById('report-content');
         const opt = {
-            margin:       0.5,
-            filename:     'Assessment_Report.pdf',
+            margin:       [0.3, 0.3, 0.3, 0.3],
+            filename:     'Assessment_Report_<?= esc(session()->get('first_name')) ?>_<?= str_replace(' ', '_', esc($quiz['name'])) ?>.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
         };
         html2pdf().set(opt).from(element).save();
     });

@@ -33,13 +33,16 @@
                 <?php else: ?>
                     <?php foreach ($progress_stats as $stat): ?>
                     <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold small"><?= $stat['label'] ?></span>
-                            <span class="badge bg-light text-dark border-0 small"><?= $stat['sublabel'] ?></span>
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="fw-bold text-dark" style="font-size: 0.95rem;"><?= esc($stat['label']) ?></span>
+                            <span class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;"><?= esc($stat['sublabel']) ?></span>
                         </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar <?= $stat['color_class'] ?>" role="progressbar" style="width: <?= $stat['percent'] ?>%" 
-                                 aria-valuenow="<?= $stat['percent'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress rounded-pill" style="height: 18px; background-color: #f1f5f9;">
+                            <div class="progress-bar <?= $stat['color_class'] ?> rounded-pill shadow-sm d-flex align-items-center justify-content-center fw-bold" 
+                                 role="progressbar" style="width: <?= $stat['percent'] ?>%; font-size: 0.7rem; color: #fff;" 
+                                 aria-valuenow="<?= $stat['percent'] ?>" aria-valuemin="0" aria-valuemax="100">
+                                <?= $stat['display_percent'] ?>
+                            </div>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -104,7 +107,7 @@
                          data-status="<?= $asm['status'] ?>">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <span class="badge bg-primary bg-opacity-10 text-primary border-0"><?= esc($asm['topic_name'] ?: 'General') ?></span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border-0"><?= esc($asm['topic_display']) ?></span>
                                 <span class="small text-muted"><i class="bi bi-clock"></i> <?= $asm['duration_minutes'] ?>m</span>
                             </div>
                             
@@ -137,8 +140,22 @@
                                  <div class="d-flex align-items-center text-muted small fw-bold" style="min-height: 20px;"></div>
                              </div>
 
-                            <div class="d-grid">
-                                <?php if ($now < $start): ?>
+                            <div class="d-grid gap-2">
+                                <?php if ($asm['status'] === 'COMPLETED'): ?>
+                                    <div class="alert alert-success border-0 small py-2 mb-0 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-check-circle-fill me-2"></i> Submitted</span>
+                                        <?php if ($asm['retest_requested']): ?>
+                                            <span class="badge bg-warning text-dark">Retest Requested</span>
+                                        <?php else: ?>
+                                            <form action="<?= base_url('quiz/retest/' . $asm['id']) ?>" method="post" class="d-inline">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="btn btn-link btn-sm text-danger p-0 fw-bold" style="font-size: 0.75rem; text-decoration: none;">
+                                                    <i class="bi bi-arrow-repeat"></i> Request Retest
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php elseif ($now < $start): ?>
                                     <button class="btn btn-light disabled rounded-3">Upcoming</button>
                                 <?php elseif ($now > $end): ?>
                                     <button class="btn btn-light disabled rounded-3">Expired</button>
@@ -177,16 +194,17 @@
                         </thead>
                         <tbody>
                             <?php foreach ($completed_quizzes as $cq): 
-                                $end = strtotime($cq['end_time']);
-                                $now = time();
+                                $nowStr = date('Y-m-d H:i:s');
                                 // Results are released if the admin says so OR if the quiz time has naturally expired
-                                $canView = ($now > $end || $cq['results_released']);
+                                $canView = ($nowStr >= $cq['end_time'] || (bool)$cq['results_released']);
+                                $passScore = $cq['pass_score'] ?: 70;
+                                $failed = ($cq['score'] < $passScore);
                             ?>
                             <tr>
                                 <td class="ps-4 fw-bold"><?= esc($cq['quiz_name']) ?></td>
                                 <td>
                                     <?php if ($canView): ?>
-                                        <span class="badge <?= $cq['score'] >= 70 ? 'bg-success' : 'bg-danger' ?> bg-opacity-10 <?= $cq['score'] >= 70 ? 'text-success' : 'text-danger' ?>">
+                                        <span class="badge <?= !$failed ? 'bg-success' : 'bg-danger' ?> bg-opacity-10 <?= !$failed ? 'text-success' : 'text-danger' ?>">
                                             <?= round((float)$cq['score'], 1) ?>%
                                         </span>
                                     <?php else: ?>
@@ -194,11 +212,9 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <?php if ($canView): 
-                                        $passScore = $cq['pass_score'] ?: 70;
-                                    ?>
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <?php if ($cq['score'] >= $passScore): ?>
+                                    <div class="d-flex justify-content-end gap-2 align-items-center">
+                                        <?php if ($canView): ?>
+                                            <?php if (!$failed): ?>
                                                 <a href="<?= base_url('quiz/certificate/'.$cq['id']) ?>" class="btn btn-outline-success btn-sm px-3 rounded-pill" title="Download Certificate">
                                                     <i class="bi bi-award"></i> Certificate
                                                 </a>
@@ -206,19 +222,8 @@
                                             <a href="<?= base_url('results/'.$cq['id']) ?>" class="btn btn-primary btn-sm px-3 rounded-pill">
                                                 View Report
                                             </a>
-                                        </div>
-                                    <?php else: ?>
-                                        <?php if ($cq['retest_requested']): ?>
-                                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Retest Requested</span>
-                                        <?php else: ?>
-                                            <form action="<?= base_url('quiz/retest/' . $cq['id']) ?>" method="post" class="d-inline">
-                                                <?= csrf_field() ?>
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Request Retest">
-                                                    <i class="bi bi-arrow-repeat"></i> Request Retest
-                                                </button>
-                                            </form>
                                         <?php endif; ?>
-                                    <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -330,24 +335,33 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('<?= base_url('quiz/get-updates') ?>')
             .then(res => res.json())
             .then(data => {
-                // If the count has changed, we definitely need to reload
+                // If the count of items changed, we need to reload (new assignment or one finished)
                 if (data.length !== currentQuizzes.length) {
                     location.reload();
                     return;
                 }
                 
-                // If any quiz ID shifted or status changed, reload
-                let changed = false;
-                data.forEach((newItem, idx) => {
-                    const oldItem = currentQuizzes.find(q => q.id == newItem.id);
-                    if (!oldItem || newItem.status !== oldItem.status) {
-                        changed = true;
+                // If IDs don't match exactly, reload (assignment swapped)
+                const currentIds = currentQuizzes.map(q => q.id).sort().join(',');
+                const newIds = data.map(q => q.id).sort().join(',');
+                if (currentIds !== newIds) {
+                    location.reload();
+                    return;
+                }
+
+                // Update status in place without reload
+                data.forEach((newItem) => {
+                    const cardContainer = document.querySelector(`.quiz-card-container[data-quiz-id="${newItem.id}"]`);
+                    if (cardContainer) {
+                        const card = cardContainer.querySelector('.card');
+                        // Update status attribute so the timer loop picks it up
+                        if (card.dataset.status !== newItem.status) {
+                            card.dataset.status = newItem.status;
+                        }
                     }
                 });
                 
-                if (changed) {
-                    location.reload();
-                }
+                currentQuizzes = data;
             })
             .catch(err => console.error('Poll failed:', err));
     }

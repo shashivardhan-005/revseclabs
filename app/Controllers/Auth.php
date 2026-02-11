@@ -105,11 +105,19 @@ class Auth extends BaseController
         $session = session();
         $model = new UserModel();
         $id = $session->get('id');
+        $oldPassword = $this->request->getVar('old_password');
         $newPassword = $this->request->getVar('new_password');
         $confirmPassword = $this->request->getVar('confirm_password');
 
+        $user = $model->find($id);
+
+        if (!password_verify($oldPassword, $user['password'])) {
+            $session->setFlashdata('error', 'Current password is incorrect.');
+            return redirect()->to('/password/change');
+        }
+
         if ($newPassword !== $confirmPassword) {
-            $session->setFlashdata('error', 'Passwords do not match.');
+            $session->setFlashdata('error', 'New passwords do not match.');
             return redirect()->to('/password/change');
         }
 

@@ -19,7 +19,17 @@
                     <tr>
                         <td align="center" style="padding-top: 20px;">
                             <span style="display: block; color: #64748b; font-size: 12px; font-family: sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Certification Status</span>
-                            <div style="font-weight: 700; font-size: 18px; font-family: sans-serif; color: #334155;"><?= $score >= 70 ? 'SUCCESSFULLY CERTIFIED' : 'NOT CERTIFIED' ?></div>
+                            <div style="font-weight: 700; font-size: 18px; font-family: sans-serif; color: #334155; margin-bottom: 15px;"><?= $score >= 70 ? 'SUCCESSFULLY CERTIFIED' : 'NOT CERTIFIED' ?></div>
+                            
+                            <?php if (!empty($certificate_url)): ?>
+                                <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate;">
+                                    <tr>
+                                        <td align="center" style="border-radius: 8px; background-color: #10b981;">
+                                            <a href="<?= esc($certificate_url) ?>" target="_blank" style="display: inline-block; padding: 12px 24px; font-family: sans-serif; font-size: 14px; color: #ffffff; text-decoration: none; font-weight: 600;">Download Certificate</a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 </table>

@@ -126,4 +126,18 @@ class EmailLibrary
             'certificate_url' => base_url('quiz/certificate/' . $assignment['id'])
         ]);
     }
+
+    public function sendQuizResults($user, $quiz, $assignment, $results, $certificateUrl = null)
+    {
+        $email = $this->getUserValue($user, 'email');
+        if (empty($email)) return false;
+
+        return $this->send($email, 'Your Assessment Results: ' . $quiz['name'], 'quiz_results', [
+            'first_name' => $this->getUserValue($user, 'first_name'),
+            'quiz_name' => $quiz['name'],
+            'score' => round($assignment['score'], 1),
+            'results' => $results,
+            'certificate_url' => $certificateUrl
+        ]);
+    }
 }

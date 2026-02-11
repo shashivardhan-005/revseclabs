@@ -2,50 +2,88 @@
 
 namespace App\Controllers;
 
+use App\Models\QuizModel;
+use App\Models\UserModel;
 use App\Models\AssignmentModel;
 use App\Models\AttemptModel;
+use App\Models\ResponseModel;
 use App\Models\QuestionModel;
 use App\Models\OptionModel;
-use App\Models\ResponseModel;
 use App\Models\AuditModel;
-use App\Models\UserModel;
 use App\Models\ProfileChangeRequestModel;
-use CodeIgniter\Controller;
+use App\Models\QuizTopicModel;
 
 class Quiz extends BaseController
 {
     public function dashboard()
     {
-        if (! session()->get('isLoggedIn')) {
-            return redirect()->to('/login');
-        }
+        if (! session()->get('isLoggedIn')) return redirect()->to('/login');
 
-        $userId = session()->get('id');
         $assignmentModel = new AssignmentModel();
+        $attemptModel = new AttemptModel();
+        $responseModel = new ResponseModel();
+        $questionModel = new QuestionModel();
         
+        $userId = session()->get('id');
         $assignments = $assignmentModel->getAssignmentsByUser($userId);
-        
+
+        $now = date('Y-m-d H:i:s');
         $assigned_quizzes = [];
         $completed_quizzes = [];
         $progress_stats = [];
 
-        $now = time();
+        // 1. Organize Quizzes into Categories (Assigned vs Released Results)
         foreach ($assignments as $asm) {
-            $endTime = strtotime($asm['end_time']);
+            $isReleased = ($now >= $asm['end_time'] || (bool)$asm['results_released']);
             
-            if ($asm['status'] === 'COMPLETED' || $now > $endTime) {
+            if ($asm['status'] === 'COMPLETED' && $isReleased) {
                 $completed_quizzes[] = $asm;
-                $percent = ($asm['status'] === 'COMPLETED') ? 100 : 0;
-            } else {
+            } else if ($asm['status'] !== 'COMPLETED' || !$isReleased) {
+                // Keep in assigned if it's not completed OR if it is completed but results are NOT released yet
                 $assigned_quizzes[] = $asm;
-                $percent = ($asm['status'] === 'STARTED') ? 30 : 0;
             }
+        }
 
+        // 2. Aggregate Performance Tracking by Topic
+        $topicPerformance = [];
+
+        foreach ($assignments as $asm) {
+            $attempt = $attemptModel->where('assignment_id', $asm['id'])->first();
+            if (!$attempt) continue;
+
+            $responses = $responseModel->where('attempt_id', $attempt['id'])->findAll();
+            foreach ($responses as $resp) {
+                $q = $questionModel->find($resp['question_id']);
+                if (!$q) continue;
+
+                $topicId = $q['topic_id'];
+                if (!isset($topicPerformance[$topicId])) {
+                    $topicModel = new \App\Models\TopicModel();
+                    $topic = $topicModel->find($topicId);
+                    $topicPerformance[$topicId] = [
+                        'label' => $topic['name'] ?? 'General',
+                        'earned_weight' => 0,
+                        'total_weight' => 0
+                    ];
+                }
+
+                $weight = ($q['difficulty'] === 'HARD') ? 3 : (($q['difficulty'] === 'MEDIUM') ? 2 : 1);
+                $topicPerformance[$topicId]['total_weight'] += $weight;
+
+                if ($resp['is_correct']) {
+                    $topicPerformance[$topicId]['earned_weight'] += $weight;
+                }
+            }
+        }
+
+        foreach ($topicPerformance as $perf) {
+            $percent = ($perf['total_weight'] > 0) ? ($perf['earned_weight'] / $perf['total_weight']) * 100 : 0;
             $progress_stats[] = [
-                'label' => $asm['topic_name'] ?: $asm['quiz_name'],
-                'sublabel' => $asm['difficulty'],
-                'percent' => $percent,
-                'color_class' => ($percent == 100) ? 'bg-success' : (($percent > 0) ? 'bg-info' : 'bg-secondary')
+                'label' => $perf['label'],
+                'sublabel' => 'Topic Proficiency',
+                'percent' => round($percent),
+                'display_percent' => round($percent) . '%',
+                'color_class' => ($percent >= 70) ? 'bg-success' : (($percent >= 40) ? 'bg-warning' : 'bg-danger')
             ];
         }
 
@@ -61,33 +99,27 @@ class Quiz extends BaseController
         if (! session()->get('isLoggedIn')) return redirect()->to('/login');
 
         $assignmentModel = new AssignmentModel();
-        $quizModel = new \App\Models\QuizModel();
-        
-        $assignment = $assignmentModel->find($assignmentId);
+        $quizModel = new QuizModel();
 
+        $assignment = $assignmentModel->find($assignmentId);
         if (! $assignment || $assignment['user_id'] != session()->get('id')) {
             return redirect()->to('/dashboard');
         }
 
+        if ($assignment['status'] === 'COMPLETED') {
+            return redirect()->to('/quiz/success');
+        }
+
         $quiz = $quizModel->find($assignment['quiz_id']);
-        $now = time();
-        $startTime = strtotime($quiz['start_time']);
-        $endTime = strtotime($quiz['end_time']);
-
-        if ($now < $startTime) {
-            return redirect()->to('/dashboard')->with('error', 'This quiz has not started yet. It will be available on ' . date('M d, Y H:i', $startTime));
-        }
-
-        if ($now > $endTime) {
-            return redirect()->to('/dashboard')->with('error', 'This quiz has expired and can no longer be started.');
-        }
-
+        
         return view('quiz/start', ['assignment' => $assignment, 'quiz' => $quiz]);
     }
 
     public function take($assignmentId)
     {
-        if (! session()->get('isLoggedIn')) return redirect()->to('/login');
+        if (! session()->get('isLoggedIn')) {
+            return redirect()->to('/login');
+        }
 
         $assignmentModel = new AssignmentModel();
         $attemptModel = new AttemptModel();
@@ -96,30 +128,35 @@ class Quiz extends BaseController
         $responseModel = new ResponseModel();
         $auditModel = new AuditModel();
         $quizModel = new \App\Models\QuizModel();
+        $quizTopicModel = new QuizTopicModel();
 
         $assignment = $assignmentModel->find($assignmentId);
-        if (! $assignment || $assignment['user_id'] != session()->get('id')) {
-            return redirect()->to('/dashboard');
+        if (!$assignment || $assignment['user_id'] != session()->get('id')) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
 
         $quiz = $quizModel->find($assignment['quiz_id']);
+        if (!$quiz) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+
         $now = time();
         $startTime = strtotime($quiz['start_time']);
         $endTime = strtotime($quiz['end_time']);
 
         if ($now < $startTime) {
-            return redirect()->to('/dashboard')->with('error', 'This quiz has not started yet.');
+            return redirect()->to('/dashboard')->with('error', 'This assessment has not started yet.');
         }
 
-        if ($now > $endTime) {
-            return redirect()->to('/dashboard')->with('error', 'This quiz has expired.');
+        if ($now > $endTime && $assignment['status'] !== 'COMPLETED') {
+            return redirect()->to('/dashboard')->with('error', 'This assessment has expired.');
         }
 
         // Check for existing attempt or create new
         $attempt = $attemptModel->where('assignment_id', $assignmentId)->first();
         
         if (! $attempt) {
-            $attemptIid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            $attemptId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                 mt_rand(0, 0xffff), mt_rand(0, 0xffff),
                 mt_rand(0, 0xffff),
                 mt_rand(0, 0x0fff) | 0x4000,
@@ -127,28 +164,59 @@ class Quiz extends BaseController
                 mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
             );
 
-            // Use current server time for start_time
-            $startTimeStr = date('Y-m-d H:i:s');
-
             $attemptModel->insert([
-                'id' => $attemptIid,
+                'id' => $attemptId,
                 'assignment_id' => $assignmentId,
-                'start_time' => $startTimeStr
+                'start_time' => date('Y-m-d H:i:s')
             ]);
-            $attempt = $attemptModel->find($attemptIid);
+            $attempt = $attemptModel->find($attemptId);
 
-            // Randomize Questions (Reuse $quiz from line 102)
-            $questions = $questionModel->where('topic_id', $quiz['topic_id'])->orderBy('id', 'RANDOM')->findAll($quiz['total_questions']);
+            // Fetch selected topics for this quiz
+            $quizTopics = $quizTopicModel->where('quiz_id', $quiz['id'])->findAll();
+            $topicIds = array_column($quizTopics, 'topic_id');
+
+            // Difficulty Logic: Split questions across selected difficulties
+            $qCount = (int)$quiz['total_questions'];
+            $selectedDiffs = explode(',', $quiz['difficulty'] ?: 'MEDIUM');
+            $diffCount = count($selectedDiffs);
             
-            // Fallback if not enough questions in topic
-            if (count($questions) < $quiz['total_questions']) {
-                $extra = $questionModel->where('topic_id !=', $quiz['topic_id'])->orderBy('id', 'RANDOM')->findAll($quiz['total_questions'] - count($questions));
-                $questions = array_merge($questions, $extra);
+            $perLevel = floor($qCount / $diffCount);
+            $remainder = $qCount % $diffCount;
+
+            $selectedQuestions = [];
+            foreach ($selectedDiffs as $index => $dif) {
+                $needed = (int)($perLevel + ($index < $remainder ? 1 : 0));
+                
+                if ($needed > 0) {
+                    $query = $questionModel->where('difficulty', $dif);
+                    if (!empty($topicIds)) {
+                        $query->whereIn('topic_id', $topicIds);
+                    }
+                    
+                    $levelQuestions = $query->orderBy('id', 'RANDOM')->findAll($needed);
+                    $selectedQuestions = array_merge($selectedQuestions, $levelQuestions);
+                }
             }
 
-            foreach ($questions as $q) {
+            // Fallback: Fill from any allowed difficulty if not enough found
+            if (count($selectedQuestions) < $qCount) {
+                $existingIds = array_column($selectedQuestions, 'id');
+                $needed = (int)($qCount - count($selectedQuestions));
+                
+                if ($needed > 0) {
+                    $query = $questionModel->whereIn('difficulty', $selectedDiffs);
+                    if (!empty($existingIds)) $query->whereNotIn('id', $existingIds);
+                    if (!empty($topicIds)) $query->whereIn('topic_id', $topicIds);
+                    
+                    $extra = $query->orderBy('id', 'RANDOM')->findAll($needed);
+                    $selectedQuestions = array_merge($selectedQuestions, $extra);
+                }
+            }
+
+            shuffle($selectedQuestions);
+            foreach ($selectedQuestions as $q) {
                 $responseModel->insert([
-                    'attempt_id' => $attemptIid,
+                    'attempt_id' => $attemptId,
                     'question_id' => $q['id']
                 ]);
             }
@@ -160,45 +228,38 @@ class Quiz extends BaseController
                 'action' => 'QUIZ_START',
                 'details' => "Started quiz '{$quiz['name']}' (Assignment #$assignmentId)"
             ]);
-
-            // For a fresh attempt, remaining time is full duration
-            $remaining = $quiz['duration_minutes'] * 60;
-
-        } else {
-            // Even if attempt exists, ensure status is STARTED if it was stuck
-            if ($assignment['status'] === 'ASSIGNED') {
-                $assignmentModel->update($assignmentId, ['status' => 'STARTED']);
-            }
-
-            // Calculate remaining for existing attempt
-            $startTime = strtotime($attempt['start_time']);
-            $duration = $quiz['duration_minutes'] * 60;
-            $elapsed = time() - $startTime;
-            $remaining = max(0, $duration - $elapsed);
         }
 
-        // Load responses and questions
+        // Fetch questions and options for display
         $responses = $responseModel->where('attempt_id', $attempt['id'])->findAll();
-        $questions_data = [];
+        $questionsData = [];
         foreach ($responses as $resp) {
             $q = $questionModel->find($resp['question_id']);
-            $options = $optionModel->where('question_id', $q['id'])->findAll();
+            $options = $optionModel->where('question_id', $resp['question_id'])->findAll();
+            
+            // Randomize options for fairness
             shuffle($options);
 
-            $questions_data[] = [
+            $questionsData[] = [
                 'response_id' => $resp['id'],
                 'question_id' => $q['id'],
                 'text' => $q['text'],
                 'type' => $q['question_type'],
-                'image_url' => $q['image_base64'],
+                'image_url' => $q['image_base64'], // Check if image exists
                 'options' => $options
             ];
         }
 
+        // Calculate Remaining Time
+        $startedAt = strtotime($attempt['start_time']);
+        $durationSeconds = (int)$quiz['duration_minutes'] * 60;
+        $elapsed = time() - $startedAt;
+        $remaining = max(0, $durationSeconds - $elapsed);
+
         return view('quiz/take', [
             'assignment' => $assignment,
             'quiz' => $quiz,
-            'questions' => $questions_data,
+            'questions' => $questionsData,
             'remaining_seconds' => $remaining
         ]);
     }
@@ -211,6 +272,7 @@ class Quiz extends BaseController
         $attemptModel = new AttemptModel();
         $responseModel = new ResponseModel();
         $optionModel = new OptionModel();
+        $questionModel = new QuestionModel();
 
         $assignment = $assignmentModel->find($assignmentId);
         
@@ -218,34 +280,47 @@ class Quiz extends BaseController
             return redirect()->to('/dashboard');
         }
 
-        // IMPORTANT: Prevent resubmission of already completed quizzes
-        // This avoids resetting the score to 0 if the user refreshes or clicks back
         if ($assignment['status'] === 'COMPLETED') {
             return redirect()->to('/quiz/success');
         }
 
-        $attemptModel = new AttemptModel();
         $attempt = $attemptModel->where('assignment_id', $assignmentId)->first();
-
         $responses = $responseModel->where('attempt_id', $attempt['id'])->findAll();
-        $scoreCount = 0;
-        $totalQuestions = count($responses);
+        
+        $totalWeight = 0;
+        $earnedWeight = 0;
+        $resultsData = [];
 
         foreach ($responses as $resp) {
+            $q = $questionModel->find($resp['question_id']);
+            $weight = ($q['difficulty'] === 'HARD') ? 3 : (($q['difficulty'] === 'MEDIUM') ? 2 : 1);
+            $totalWeight += $weight;
+
             $selectedOptionId = $this->request->getPost('response_' . $resp['id']);
+            $isCorrect = false;
+            
             if ($selectedOptionId) {
                 $option = $optionModel->find($selectedOptionId);
-                $isCorrect = $option['is_correct'];
-                if ($isCorrect) $scoreCount++;
+                $isCorrect = (bool)($option['is_correct'] ?? false);
+                if ($isCorrect) $earnedWeight += $weight;
 
                 $responseModel->update($resp['id'], [
                     'selected_option_id' => $selectedOptionId,
                     'is_correct' => $isCorrect
                 ]);
             }
+
+            $options = $optionModel->where('question_id', $resp['question_id'])->findAll();
+
+            $resultsData[] = [
+                'question' => $q,
+                'options' => $options,
+                'selected_option_id' => $selectedOptionId,
+                'is_correct' => $isCorrect
+            ];
         }
 
-        $finalScore = ($totalQuestions > 0) ? ($scoreCount / $totalQuestions) * 100 : 0;
+        $finalScore = ($totalWeight > 0) ? ($earnedWeight / $totalWeight) * 100 : 0;
 
         $assignmentModel->update($assignmentId, [
             'status' => 'COMPLETED',
@@ -258,34 +333,14 @@ class Quiz extends BaseController
             'score' => $finalScore
         ]);
 
-        // Certificate Logic
-        $quizModel = new \App\Models\QuizModel();
-        $quiz = $quizModel->find($assignment['quiz_id']);
-        
-        $passThreshold = (int)($quiz['pass_score'] ?: 70);
-        
-        // Use a small epsilon for float comparison safety, though round() is generally better for display scores
-        if (round((float)$finalScore, 2) >= $passThreshold) {
-            $userModel = new \App\Models\UserModel();
-            $user = $userModel->find(session()->get('id'));
-            
-            $emailLib = new \App\Libraries\EmailLibrary();
-            // Refresh assignment data to ensure we have the saved score and flags
-            $assignmentData = $assignmentModel->find($assignmentId);
-            
-            // Only send if not already sent for this assignment
-            if (!$assignmentData['certificate_sent']) {
-                if ($emailLib->sendCertificate($user, $quiz, $assignmentData)) {
-                    $assignmentModel->update($assignmentId, ['certificate_sent' => true]);
-                }
-            }
-        }
+        // Emails are now handled by the CLI cron job (SendQuizEmails) 
+        // which sends combined results/certificates after the quiz period ends.
 
         $auditModel = new \App\Models\AuditModel();
         $auditModel->insert([
             'user_id' => session()->get('id'),
             'action' => 'QUIZ_SUBMIT',
-            'details' => "Submitted quiz '{$quiz['name']}' (Assignment #$assignmentId) with score: " . round($finalScore, 2) . "%"
+            'details' => "Submitted quiz (Assignment #$assignmentId) with score: " . round($finalScore, 2) . "%"
         ]);
 
         session()->setFlashdata('success', 'Quiz submitted successfully.');
@@ -501,13 +556,11 @@ class Quiz extends BaseController
         foreach ($assignments as $asm) {
             $endTime = strtotime($asm['end_time']);
             
-            // Only include quizzes that are NOT completed AND NOT expired
-            // This matches the assigned_quizzes logic in the dashboard() method
             if ($asm['status'] !== 'COMPLETED' && $now <= $endTime) {
                 $data[] = [
                     'id' => $asm['id'],
                     'quiz_name' => $asm['quiz_name'],
-                    'topic_name' => $asm['topic_name'] ?: 'General',
+                    'topic_name' => $asm['topic_display'] ?: 'General',
                     'duration_minutes' => $asm['duration_minutes'],
                     'start_time' => $asm['start_time'],
                     'end_time' => $asm['end_time'],

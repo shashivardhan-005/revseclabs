@@ -24,7 +24,7 @@
                         <td width="2%" style="padding-top: 20px; border-left: 1px solid #e2e8f0;">&nbsp;</td>
                         <td align="center" width="49%" style="padding-top: 20px;">
                             <span style="display: block; color: #64748b; font-size: 12px; font-family: sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Deadline</span>
-                            <div style="font-weight: 600; color: #334155; font-family: sans-serif;"><?= date('M d, Y', strtotime($quiz['end_time'])) ?></div>
+                            <div style="font-weight: 600; color: #334155; font-family: sans-serif;"><?= date('M d, Y, h:i A', strtotime($quiz['end_time'])) ?></div>
                         </td>
                     </tr>
                 </table>
