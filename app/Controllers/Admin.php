@@ -584,7 +584,7 @@ class Admin extends BaseController
         $status = $this->request->getGet('status');
         $quizId = $this->request->getGet('quiz_id');
         
-        $query = $assignmentModel->select('quiz_assignments.*, users.email, quizzes.name as quiz_name')
+        $query = $assignmentModel->select('quiz_assignments.*, users.email, users.first_name, users.last_name, quizzes.name as quiz_name')
                                 ->join('users', 'users.id = quiz_assignments.user_id')
                                 ->join('quizzes', 'quizzes.id = quiz_assignments.quiz_id')
                                 ->orderBy('assigned_at', 'DESC');
