@@ -146,7 +146,7 @@
                                         <span><i class="bi bi-check-circle-fill me-2"></i> Submitted</span>
                                         <?php if ($asm['retest_requested']): ?>
                                             <span class="badge bg-warning text-dark">Retest Requested</span>
-                                        <?php else: ?>
+                                        <?php elseif (! ($asm['retest_rejected'] ?? false) && ($asm['retest_count'] ?? 0) < 1): ?>
                                             <form action="<?= base_url('quiz/retest/' . $asm['id']) ?>" method="post" class="d-inline">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0 fw-bold" style="font-size: 0.75rem; text-decoration: none;">

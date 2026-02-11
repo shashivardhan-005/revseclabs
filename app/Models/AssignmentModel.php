@@ -12,7 +12,8 @@ class AssignmentModel extends Model
     protected $returnType       = 'array';
     protected $allowedFields    = [
         'user_id', 'quiz_id', 'status', 'assigned_at', 
-        'completed_at', 'score', 'result_email_sent', 'certificate_sent', 'retest_requested'
+        'completed_at', 'score', 'result_email_sent', 'certificate_sent', 'retest_requested',
+        'retest_count', 'retest_rejected'
     ];
 
     // Dates

@@ -629,7 +629,8 @@ class Admin extends BaseController
                 'status' => 'ASSIGNED',
                 'score' => null,
                 'completed_at' => null,
-                'retest_requested' => false
+                'retest_requested' => false,
+                'retest_count' => ($assignment['retest_count'] ?? 0) + 1
             ]);
             
             // Delete attempts
@@ -653,7 +654,8 @@ class Admin extends BaseController
         $assignment = $assignmentModel->find($id);
         if ($assignment && $assignment['retest_requested']) {
             $assignmentModel->update($id, [
-                'retest_requested' => false
+                'retest_requested' => false,
+                'retest_rejected' => true
             ]);
         }
 

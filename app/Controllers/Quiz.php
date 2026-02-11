@@ -502,6 +502,16 @@ class Quiz extends BaseController
             return redirect()->back()->with('error', 'Retest already requested.');
         }
 
+        // Check if retest was previously rejected
+        if ($assignment['retest_rejected']) {
+            return redirect()->back()->with('error', 'Your retest request was denied. No further attempts allowed.');
+        }
+
+        // Check if max retest attempts reached (Allow only 1 retest => total 2 attempts)
+        if (($assignment['retest_count'] ?? 0) >= 1) {
+            return redirect()->back()->with('error', 'You have already used your allowed retest attempt.');
+        }
+
         $assignmentModel->update($assignmentId, ['retest_requested' => true]);
 
         return redirect()->back()->with('success', 'Retest request submitted successfully.');
