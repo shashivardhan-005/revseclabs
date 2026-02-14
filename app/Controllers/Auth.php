@@ -62,7 +62,7 @@ class Auth extends BaseController
                     'action' => 'LOGIN_FAILED',
                     'details' => "Failed login attempt: Invalid password"
                 ]);
-                $session->setFlashdata('error', 'Invalid password.');
+                $session->setFlashdata('error', 'Invalid email or password.');
                 return redirect()->to('/login');
             }
         } else {
@@ -72,7 +72,7 @@ class Auth extends BaseController
                 'action' => 'LOGIN_FAILED',
                 'details' => "Failed login attempt for non-existent email: $email"
             ]);
-            $session->setFlashdata('error', 'Email not found.');
+            $session->setFlashdata('error', 'Invalid email or password.');
             return redirect()->to('/login');
         }
     }
@@ -121,6 +121,14 @@ class Auth extends BaseController
             return redirect()->to('/password/change');
         }
 
+        // Validate password complexity
+        helper('password');
+        $validation = validate_password_complexity($newPassword);
+        if (!$validation['valid']) {
+            $session->setFlashdata('error', implode(' ', $validation['errors']));
+            return redirect()->to('/password/change');
+        }
+
         $model->update($id, [
             'password' => $newPassword,
             'is_password_changed' => true
@@ -162,8 +170,8 @@ class Auth extends BaseController
         }
 
         // Always show success to prevent email enumeration
-        session()->setFlashdata('success', 'If your email is in our system, you will receive a reset link shortly.');
-        return redirect()->to('/forgot-password');
+        session()->setFlashdata('success', 'If your email is in our system, you will receive a reset link shortly. Please check your inbox.');
+        return redirect()->to('/login');
     }
 
     public function resetPassword($token)
@@ -189,6 +197,14 @@ class Auth extends BaseController
 
         if ($newPassword !== $confirmPassword) {
             session()->setFlashdata('error', 'Passwords do not match.');
+            return redirect()->back();
+        }
+
+        // Validate password complexity
+        helper('password');
+        $validation = validate_password_complexity($newPassword);
+        if (!$validation['valid']) {
+            session()->setFlashdata('error', implode(' ', $validation['errors']));
             return redirect()->back();
         }
 

@@ -18,6 +18,9 @@ $routes->post('reset-password/update', 'Auth::updatePasswordWithToken');
 $routes->get('password/change', 'Auth::changePassword');
 $routes->post('password/update', 'Auth::updatePassword');
 
+// API Routes
+$routes->get('api/password-settings', 'Api::passwordSettings');
+
 $routes->get('dashboard', 'Quiz::dashboard');
 $routes->get('quiz/(:num)/start', 'Quiz::start/$1');
 $routes->get('quiz/(:num)/take', 'Quiz::take/$1');

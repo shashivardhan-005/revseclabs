@@ -957,14 +957,28 @@ class Admin extends BaseController
         $settingModel = new SettingModel();
         $postData = $this->request->getPost();
 
-        foreach ($postData as $key => $value) {
-        // Skip CSRF token and empty keys
-        if ($key === 'csrf_test_name' || empty($key)) {
-            continue;
+        // Explicitly handle password policy checkboxes (they don't send value when unchecked)
+        $checkboxSettings = [
+            'password_require_uppercase',
+            'password_require_lowercase',
+            'password_require_numbers',
+            'password_require_special'
+        ];
+        
+        foreach ($checkboxSettings as $checkbox) {
+            if (!isset($postData[$checkbox])) {
+                $postData[$checkbox] = '0';
+            }
         }
-        // Only update keys that exist in our schema or are prefixed correctly
-        $settingModel->updateByKey($key, $value);
-    }
+
+        foreach ($postData as $key => $value) {
+            // Skip CSRF token and empty keys
+            if ($key === 'csrf_test_name' || empty($key)) {
+                continue;
+            }
+            // Only update keys that exist in our schema or are prefixed correctly
+            $settingModel->updateByKey($key, $value);
+        }
 
         return redirect()->to('/admin/settings')->with('success', 'Settings updated successfully.');
     }

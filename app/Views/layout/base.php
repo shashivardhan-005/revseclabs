@@ -94,6 +94,11 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Base URL for API calls
+        const baseUrl = '<?= base_url() ?>';
+    </script>
+    <script src="<?= base_url('static/js/password_validator.js') ?>"></script>
     <?= $this->renderSection('extra_js') ?>
 </body>
 

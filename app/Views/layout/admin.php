@@ -87,6 +87,13 @@
         <div class="dashboard-content p-4">
             <?= $this->renderSection('content') ?>
         </div>
+
+        <!-- FOOTER -->
+        <footer class="text-center py-3 border-top bg-light" style="font-size: 0.875rem; color: #6c757d;">
+            <span>© <?= date('Y') ?> <?= get_setting('site_name', 'RevSecLabs') ?>. All rights reserved.</span>
+            <span class="mx-2">|</span>
+            <span>Support: <a href="mailto:<?= get_setting('contact_email', 'revseclabs@gmail.com') ?>" class="text-decoration-none"><?= get_setting('contact_email', 'revseclabs@gmail.com') ?></a></span>
+        </footer>
     </div>
 
     <!-- Mobile Sidebar Overlay -->

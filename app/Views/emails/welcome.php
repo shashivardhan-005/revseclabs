@@ -1,7 +1,7 @@
 <?= $this->extend('emails/layout') ?>
 
 <?= $this->section('content') ?>
-    <h2 style="color: #1e293b; margin-top: 0; font-family: sans-serif;">Welcome to RevSecLabs!</h2>
+    <h2 style="color: #1e293b; margin-top: 0; font-family: sans-serif;">Welcome to <?= esc($site_name ?? 'RevSecLabs') ?>!</h2>
     <p style="font-size: 16px; font-family: sans-serif;">Hello <?= esc($first_name) ?>,</p>
     <p style="color: #64748b; margin-bottom: 30px; font-family: sans-serif;">Your account has been successfully provisioned. You can now access the platform to participate in ongoing cybersecurity awareness assessments.</p>
     

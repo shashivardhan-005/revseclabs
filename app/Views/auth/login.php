@@ -3,7 +3,7 @@
 <?= $this->section('title') ?>Login<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<div class="row justify-content-center align-items-stretch min-vh-75 mt-5">
+<div class="row justify-content-center align-items-stretch mt-5">
     <!-- Login Form Panel -->
     <div class="col-lg-5 bg-white rounded-4 p-4 p-md-5 shadow-lg card border-0">
         <div class="text-center mb-5 d-lg-none">
@@ -25,13 +25,16 @@
             </div>
             
             <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="form-label mb-0">Password</label>
-                    <a href="<?= base_url('forgot-password') ?>" class="small text-primary fw-semibold text-decoration-none">Forgot Password?</a>
-                </div>
-                <div class="input-group">
+                <label class="form-label">Password</label>
+                <div class="input-group position-relative">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                    <input type="password" name="password" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
+                    <input type="password" id="loginPassword" name="password" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
+                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted" onclick="togglePassword('loginPassword', this)" style="text-decoration: none; z-index: 10;">
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                </div>
+                <div class="mt-2 text-end">
+                    <a href="<?= base_url('forgot-password') ?>" class="small text-primary fw-semibold text-decoration-none">Forgot Password?</a>
                 </div>
             </div>
 
@@ -40,17 +43,23 @@
                     Secure Login <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
-        </form>
-
-        <hr class="my-5 opacity-25">
-
-        <div class="bg-light p-4 rounded-4 border border-dashed text-center">
-            <h6 class="fw-bold text-dark mb-2">Trouble Logging In?</h6>
-            <p class="small text-muted mb-0">
-                To set or reset your password, use the <a href="<?= base_url('forgot-password') ?>" class="fw-bold">Forgot Password</a> link.
-                We'll email you a secure link to create a new one instantly.
-            </p>
-        </div>
     </div>
 </div>
+
+<script>
+function togglePassword(fieldId, button) {
+    const field = document.getElementById(fieldId);
+    const icon = button.querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye-fill');
+        icon.classList.add('bi-eye-slash-fill');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye-slash-fill');
+        icon.classList.add('bi-eye-fill');
+    }
+}
+</script>
 <?= $this->endSection() ?>

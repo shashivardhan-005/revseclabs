@@ -38,6 +38,11 @@
                             <i class="bi bi-shield-lock me-2"></i> Quiz Defaults
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-3 fw-bold" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-selected="false">
+                            <i class="bi bi-key-fill me-2"></i> Password Policy
+                        </button>
+                    </li>
                 </ul>
             </div>
             <div class="card-body p-4 bg-white">
@@ -56,14 +61,6 @@
                                 <label for="contact_email" class="form-label fw-bold text-muted small text-uppercase">Support Contact Email</label>
                                 <input type="email" class="form-control form-control-lg bg-light border-0" id="contact_email" name="contact_email" value="<?= esc($settings['contact_email'] ?? 'revseclabs@gmail.com') ?>" required>
                                 <div class="form-text mt-2 text-muted">Displayed in footers and contact sections.</div>
-                            </div>
-                            <div class="mb-4">
-                                <label for="time_format" class="form-label fw-bold text-muted small text-uppercase">Global Time Format</label>
-                                <select class="form-select form-control-lg bg-light border-0" id="time_format" name="time_format">
-                                    <option value="12h" <?= ($settings['time_format'] ?? '24h') === '12h' ? 'selected' : '' ?>>12-hour (AM/PM)</option>
-                                    <option value="24h" <?= ($settings['time_format'] ?? '24h') === '24h' ? 'selected' : '' ?>>24-hour (Military Time)</option>
-                                </select>
-                                <div class="form-text mt-2 text-muted">Choose how time is displayed and selected across the platform.</div>
                             </div>
                         </div>
 
@@ -149,6 +146,50 @@
                                     <label for="default_violation_limit" class="form-label fw-bold text-muted small text-uppercase">Security Violation Limit</label>
                                     <input type="number" class="form-control form-control-lg bg-light border-0" id="default_violation_limit" name="default_violation_limit" value="<?= esc($settings['default_violation_limit'] ?? '3') ?>" min="1" max="10" required>
                                     <div class="form-text mt-2 text-muted">Max fullscreen exits/tab switches allowed.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="time_format" class="form-label fw-bold text-muted small text-uppercase">Global Time Format</label>
+                                    <select class="form-select form-control-lg bg-light border-0" id="time_format" name="time_format">
+                                        <option value="12h" <?= ($settings['time_format'] ?? '24h') === '12h' ? 'selected' : '' ?>>12-hour (AM/PM)</option>
+                                        <option value="24h" <?= ($settings['time_format'] ?? '24h') === '24h' ? 'selected' : '' ?>>24-hour (Military Time)</option>
+                                    </select>
+                                    <div class="form-text mt-2 text-muted">Choose how time is displayed and selected across the platform.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Policy Tab -->
+                        <div class="tab-pane fade" id="password" role="tabpanel">
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        <strong>Password Policy:</strong> Configure password complexity requirements for all users.
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="password_min_length" class="form-label fw-bold text-muted small text-uppercase">Minimum Password Length</label>
+                                    <input type="number" class="form-control form-control-lg bg-light border-0" id="password_min_length" name="password_min_length" value="<?= esc($settings['password_min_length'] ?? '8') ?>" min="6" max="32" required>
+                                    <div class="form-text mt-2 text-muted">Minimum number of characters required (6-32).</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-muted small text-uppercase">Complexity Requirements</label>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="password_require_uppercase" name="password_require_uppercase" value="1" <?= ($settings['password_require_uppercase'] ?? '1') === '1' ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="password_require_uppercase">Require Uppercase Letters (A-Z)</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="password_require_lowercase" name="password_require_lowercase" value="1" <?= ($settings['password_require_lowercase'] ?? '1') === '1' ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="password_require_lowercase">Require Lowercase Letters (a-z)</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="password_require_numbers" name="password_require_numbers" value="1" <?= ($settings['password_require_numbers'] ?? '1') === '1' ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="password_require_numbers">Require Numbers (0-9)</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="password_require_special" name="password_require_special" value="1" <?= ($settings['password_require_special'] ?? '0') === '1' ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="password_require_special">Require Special Characters (!@#$%^&*)</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

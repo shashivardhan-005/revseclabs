@@ -133,7 +133,7 @@
         <!-- FOOTER -->
         <footer class="dash-footer">
             <span>© <?= date('Y') ?> <?= get_setting('site_name', 'RevSecLabs') ?>. All rights reserved.</span>
-            <span>Designed for Professional Awareness.</span>
+            <span>Support: <a href="mailto:<?= get_setting('contact_email', 'revseclabs@gmail.com') ?>" class="text-decoration-none"><?= get_setting('contact_email', 'revseclabs@gmail.com') ?></a></span>
         </footer>
     </div>
 
@@ -154,7 +154,10 @@
                 document.body.classList.remove('sidebar-open');
             });
         }
+        // Base URL for API calls
+        const baseUrl = '<?= base_url() ?>';
     </script>
+    <script src="<?= base_url('static/js/password_validator.js') ?>"></script>
     <?= $this->renderSection('extra_js') ?>
 </body>
 </html>

@@ -37,6 +37,8 @@ class EmailLibrary
         
         // Add common data
         $data['base_url'] = base_url();
+        $data['site_name'] = get_setting('site_name', 'RevSecLabs');
+        $data['contact_email'] = get_setting('contact_email', 'revseclabs@gmail.com');
         
         $message = view('emails/' . $template, $data);
         $this->email->setMessage($message);
@@ -72,7 +74,8 @@ class EmailLibrary
             return false;
         }
 
-        return $this->send($email, 'Welcome to RevSecLabs Quiz Platform', 'welcome', [
+        $siteName = get_setting('site_name', 'RevSecLabs');
+        return $this->send($email, "Welcome to {$siteName} Quiz Platform", 'welcome', [
             'first_name' => $this->getUserValue($user, 'first_name'),
             'email' => $email,
             'password' => $password

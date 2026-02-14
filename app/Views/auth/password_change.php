@@ -20,6 +20,8 @@
                         <p class="text-muted">You are required to set a new password before proceeding.</p>
                     </div>
 
+
+
                     <?php if (session()->getFlashdata('error')): ?>
                         <div class="alert alert-danger alert-dismissible fade show border-0 bg-danger bg-opacity-10 text-danger mb-4 rounded-4" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i><?= session()->getFlashdata('error') ?>
@@ -39,24 +41,32 @@
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold text-dark mb-2">Current Password</label>
-                            <input type="password" name="old_password" class="form-control border-0 bg-light rounded-3 py-2" required placeholder="Enter current password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                            <div class="position-relative">
+                                <input type="password" id="oldPassword" name="old_password" class="form-control border-0 bg-light rounded-3 py-2 pe-5" required placeholder="Enter current password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                                <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2 text-muted" onclick="togglePassword('oldPassword', this)" style="text-decoration: none;">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold text-dark mb-2">New Password</label>
                             <div class="position-relative">
-                                <input type="password" name="new_password" class="form-control border-0 bg-light rounded-3 py-2" required minlength="8" placeholder="Enter new password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
-                                <div class="position-absolute end-0 top-50 translate-middle-y me-3">
-                                    <div class="bg-white rounded-circle p-1 shadow-sm border">
-                                        <i class="bi bi-key-fill text-dark small"></i>
-                                    </div>
-                                </div>
+                                <input type="password" id="newPasswordChange" name="new_password" class="form-control border-0 bg-light rounded-3 py-2 pe-5" required minlength="8" placeholder="Enter new password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                                <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2 text-muted" onclick="togglePassword('newPasswordChange', this)" style="text-decoration: none;">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
                             </div>
                         </div>
                         
                         <div class="mb-4">
                             <label class="form-label fw-bold text-dark mb-2">Confirm New Password</label>
-                            <input type="password" name="confirm_password" class="form-control border-0 bg-light rounded-3 py-2" required minlength="8" placeholder="Confirm new password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                            <div class="position-relative">
+                                <input type="password" id="confirmPasswordChange" name="confirm_password" class="form-control border-0 bg-light rounded-3 py-2 pe-5" required minlength="8" placeholder="Confirm new password" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important;">
+                                <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2 text-muted" onclick="togglePassword('confirmPasswordChange', this)" style="text-decoration: none;">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2">
@@ -70,4 +80,21 @@
         </div>
     </div>
 </div>
+
+<script>
+function togglePassword(fieldId, button) {
+    const field = document.getElementById(fieldId);
+    const icon = button.querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye-fill');
+        icon.classList.add('bi-eye-slash-fill');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye-slash-fill');
+        icon.classList.add('bi-eye-fill');
+    }
+}
+</script>
 <?= $this->endSection() ?>

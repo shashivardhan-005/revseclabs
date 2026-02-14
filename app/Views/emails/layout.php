@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="x-apple-disable-message-reformatting">
-    <title>RevSecLabs Notification</title>
+    <title><?= esc($site_name ?? 'RevSecLabs') ?> Notification</title>
     <!--[if mso]>
     <xml>
         <o:OfficeDocumentSettings>
@@ -54,7 +54,7 @@
                     <!-- Header -->
                     <tr>
                         <td class="header" style="background: #4f46e5; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 30px 20px; text-align: center; color: #ffffff;">
-                            <h1 style="margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">RevSecLabs User Portal</h1>
+                            <h1 style="margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;"><?= esc($site_name ?? 'RevSecLabs') ?> User Portal</h1>
                         </td>
                     </tr>
                     
@@ -68,7 +68,8 @@
                     <!-- Footer -->
                     <tr>
                         <td class="footer" style="background-color: #f8fafc; padding: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0 0 10px 0;">&copy; <?= date('Y') ?> RevSecLabs. All rights reserved.</p>
+                            <p style="margin: 0 0 10px 0;">&copy; <?= date('Y') ?> <?= esc($site_name ?? 'RevSecLabs') ?>. All rights reserved.</p>
+                            <p style="margin: 0 0 10px 0;">Need help? Contact us at <a href="mailto:<?= esc($contact_email ?? 'revseclabs@gmail.com') ?>" style="color: #3b82f6; text-decoration: none;"><?= esc($contact_email ?? 'revseclabs@gmail.com') ?></a></p>
                             <p style="margin: 0;">This is an automated notification. Please do not reply directly to this email.</p>
                         </td>
                     </tr>
